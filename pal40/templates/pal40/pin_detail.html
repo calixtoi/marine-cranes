@@ -1,0 +1,109 @@
+{% extends "pal40/base.html" %}
+{% block title %}Pin {{ pin.pin_number }} — {{ connector.designation }} — PAL40{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span>/</span>
+  <a href="{% url 'pal40:connector_detail' connector.pk %}">{{ connector.designation }}</a>
+  <span>/</span> Pin {{ pin.pin_number }}
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2>
+    {{ connector.designation }} &mdash; Pin {{ pin.pin_number }}
+    <span class="badge-type {{ pin.signal_type }}" style="margin-left:8px;">{{ pin.get_signal_type_display }}</span>
+    {% if pin.safety_related %}<span class="badge-safety" style="margin-left:6px;">SAFETY-RELATED</span>{% endif %}
+  </h2>
+  <p style="color:#c9d1d9;font-size:.95rem;margin-top:8px;">{{ pin.function }}</p>
+</div>
+
+<div class="card">
+  <h2>Electrical Details</h2>
+  <table>
+    <tbody>
+      <tr><td style="width:180px;color:#8b949e;">Signal type</td><td>{{ pin.get_signal_type_display }}</td></tr>
+      <tr><td style="color:#8b949e;">Direction</td><td>{{ pin.get_direction_display }}</td></tr>
+      <tr><td style="color:#8b949e;">Cable</td><td style="font-family:monospace;">{{ pin.cable|default:"—" }}</td></tr>
+      <tr><td style="color:#8b949e;">Wire color</td><td>{{ pin.wire_color|default:"—" }}</td></tr>
+      <tr><td style="color:#8b949e;">Terminal / Pin ref</td><td>{{ pin.terminal|default:"—" }}</td></tr>
+      <tr><td style="color:#8b949e;">Safety-related</td><td>{% if pin.safety_related %}<span class="badge-safety">YES</span>{% else %}<span class="badge-ok">NO</span>{% endif %}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+{% if pin.device %}
+<div class="card">
+  <h2>Connected Device</h2>
+  <table>
+    <tbody>
+      <tr><td style="width:180px;color:#8b949e;">Device ID</td><td><strong>{{ pin.device.identification }}</strong></td></tr>
+      <tr><td style="color:#8b949e;">Device name</td><td>{{ pin.device.name }}</td></tr>
+      <tr><td style="color:#8b949e;">Device type</td><td>{{ pin.device.get_device_type_display }}</td></tr>
+      <tr><td style="color:#8b949e;">Cable</td><td style="font-family:monospace;">{{ pin.device.cable|default:"—" }}</td></tr>
+      {% if pin.device.description %}
+      <tr><td style="color:#8b949e;">Description</td><td>{{ pin.device.description }}</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if pin.description %}
+<div class="card">
+  <h2>Functional Description</h2>
+  <p style="font-size:.88rem;color:#c9d1d9;white-space:pre-wrap;">{{ pin.description }}</p>
+</div>
+{% endif %}
+
+{% if pin.safety_functions.all %}
+<div class="card">
+  <h2>Safety Functions</h2>
+  {% for sf in pin.safety_functions.all %}
+  <div style="margin-bottom:12px;padding:12px;background:#0d1117;border-radius:6px;border:1px solid #30363d;">
+    <div style="font-weight:600;color:#e6edf3;">{{ sf.name }}
+      <span style="font-size:.75rem;color:#ff7b72;margin-left:8px;">{{ sf.safety_level }}</span>
+      {% if sf.reaction_time_ms %}<span style="font-size:.75rem;color:#8b949e;margin-left:8px;">&lt; {{ sf.reaction_time_ms }} ms</span>{% endif %}
+    </div>
+    <div style="font-size:.85rem;color:#8b949e;margin-top:6px;">{{ sf.description }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if pin.troubleshooting.all %}
+<div class="card">
+  <h2>Troubleshooting</h2>
+  <table>
+    <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Diagnostic Procedure</th></tr></thead>
+    <tbody>
+      {% for note in pin.troubleshooting.all %}
+      <tr>
+        <td>{{ note.symptom }}</td>
+        <td>{{ note.likely_cause }}</td>
+        <td style="font-size:.82rem;">{{ note.diagnostic_procedure }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if pin.signal_groups.all %}
+<div class="card">
+  <h2>Signal Groups</h2>
+  {% for sg in pin.signal_groups.all %}
+  <div class="pill">{{ sg.name }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if pin.notes %}
+<div class="card">
+  <h2>Notes</h2>
+  <p style="font-size:.88rem;color:#8b949e;">{{ pin.notes }}</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "pal40/base.html" %}
+{% block title %}PAL40 — System Overview{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">Home</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <h2>PAL40 Control System — Marine Crane ECU</h2>
+  <p style="color:#8b949e;font-size:.88rem;margin-bottom:16px;">
+    The PALTRONIC 40 is PALFINGER's primary electronic overload protection and motion control unit.
+    It operates via two 56-pin Molex connectors — C70 (Blue) and C71 (Grey).
+  </p>
+  <table>
+    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Supply voltage</td><td>8 – 32 V DC</td></tr>
+      <tr><td>Max total load current</td><td>10 A</td></tr>
+      <tr><td>Operating temperature</td><td>−40 °C to +60 °C</td></tr>
+      <tr><td>Safety level</td><td>IEC 13849 PL c</td></tr>
+      <tr><td>CAN networks</td><td>2 independent buses</td></tr>
+      <tr><td>Analog inputs</td><td>4 – 20 mA current loop</td></tr>
+    </tbody>
+  </table>
+</div>
+
+{% if cranes %}
+  {% for crane in cranes %}
+    {% for cs in crane.control_systems.all %}
+      <div class="card">
+        <h2>{{ crane.name }} &mdash; {{ cs.name }}</h2>
+        <div class="connector-grid">
+          {% for conn in cs.connectors.all %}
+          <a href="{% url 'pal40:connector_detail' conn.pk %}" style="text-decoration:none;">
+            <div class="connector-card">
+              <div class="label">Connector</div>
+              <div class="title">{{ conn.designation }}</div>
+              <div style="color:#8b949e;font-size:.82rem;">Molex {{ conn.color }} &mdash; {{ conn.connector_type }}</div>
+              <div class="meta" style="margin-top:10px;">
+                <strong style="color:#e6edf3;">{{ conn.pins.count }}</strong>
+                <span style="color:#8b949e;"> pins</span>
+              </div>
+              <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;font-size:.72rem;">
+                {% for pin in conn.pins.all %}
+                  {% if pin.safety_related %}
+                    <span style="background:#6e1111;color:#ff7b72;padding:1px 5px;border-radius:3px;">{{ pin.pin_number }}</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <div class="meta" style="margin-top:10px;color:#c9d1d9;font-size:.8rem;">{{ conn.primary_role|truncatechars:90 }}</div>
+              <div style="margin-top:12px;color:#58a6ff;font-size:.8rem;">View pin table →</div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% endfor %}
+{% else %}
+  <div class="card">
+    <h2>No data loaded yet</h2>
+    <p style="color:#8b949e;">Run: <code>py manage.py load_pal40_data</code> to populate the database.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

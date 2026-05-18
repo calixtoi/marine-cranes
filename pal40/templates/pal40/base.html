@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Marine Crane Documentation{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; display: flex; flex-direction: column; }
+
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Top header ── */
+    header {
+      background: #161b22; border-bottom: 1px solid #30363d;
+      padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    header .logo { font-size: 1rem; font-weight: 700; color: #e6edf3; letter-spacing: .4px; }
+    header .badge { background: #1f6feb; color: #fff; font-size: .68rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+    header .badge-green { background: #1a5e2a; color: #56d364; }
+
+    /* ── Layout ── */
+    .layout { display: flex; flex: 1; min-height: 0; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 230px; min-width: 230px; background: #161b22;
+      border-right: 1px solid #30363d; overflow-y: auto;
+      padding: 12px 0; position: sticky; top: 41px;
+      height: calc(100vh - 41px);
+    }
+    .sidebar-section { margin-bottom: 4px; }
+    .sidebar-header {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: #484f58; padding: 10px 16px 4px;
+    }
+    .sidebar-group-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .82rem; font-weight: 600; color: #e6edf3;
+      padding: 7px 16px; cursor: pointer; user-select: none;
+    }
+    .sidebar-group-label .arrow { font-size: .65rem; color: #8b949e; transition: transform .15s; }
+    .sidebar-group-label .badge-sm {
+      font-size: .62rem; padding: 1px 6px; border-radius: 8px;
+      font-weight: 700; margin-left: auto;
+    }
+    .sidebar-group-label:hover { background: #1c2128; }
+
+    .sidebar-item {
+      display: block; padding: 5px 16px 5px 32px;
+      font-size: .8rem; color: #8b949e;
+      border-left: 2px solid transparent; transition: all .1s;
+    }
+    .sidebar-item:hover { color: #e6edf3; background: #1c2128; border-left-color: #58a6ff; text-decoration: none; }
+    .sidebar-item.active { color: #58a6ff; border-left-color: #58a6ff; background: #1c2128; }
+
+    .sidebar-divider { border: none; border-top: 1px solid #21262d; margin: 6px 12px; }
+
+    /* ── Main content ── */
+    .main-wrap { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+    nav.breadcrumb { padding: 8px 24px; font-size: .82rem; color: #8b949e; border-bottom: 1px solid #21262d; background: #0d1117; }
+    nav.breadcrumb a { color: #58a6ff; }
+    nav.breadcrumb span { margin: 0 5px; }
+
+    main { max-width: 1200px; margin: 0 auto; padding: 20px 24px; width: 100%; }
+
+    /* ── Cards ── */
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px 20px; margin-bottom: 18px; }
+    .card h2 { font-size: .95rem; font-weight: 700; color: #e6edf3; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+    .card h3 { font-size: .88rem; font-weight: 600; color: #e6edf3; margin: 12px 0 8px; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    thead th { background: #21262d; color: #8b949e; text-align: left; padding: 7px 10px; border-bottom: 1px solid #30363d; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; font-size: .72rem; }
+    tbody tr:hover { background: #1c2128; }
+    td { padding: 6px 10px; border-bottom: 1px solid #21262d; vertical-align: top; }
+
+    /* ── Badges ── */
+    .badge-type { display: inline-block; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+    .DI  { background: #1f3a5f; color: #79c0ff; }
+    .DO  { background: #3b2412; color: #ffa657; }
+    .AI  { background: #1a3a1a; color: #56d364; }
+    .AO  { background: #2a2a00; color: #e3b341; }
+    .CAN { background: #3d1f5e; color: #d2a8ff; }
+    .PWR { background: #4a1515; color: #ff7b72; }
+    .GND { background: #21262d; color: #8b949e; }
+    .badge-safety { display: inline-block; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #6e1111; color: #ff7b72; }
+    .badge-ok     { background: #1a3a1a; color: #56d364; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-block; }
+    .pill { display: inline-block; font-size: .7rem; padding: 1px 8px; border-radius: 10px; margin: 2px; border: 1px solid #30363d; color: #c9d1d9; }
+
+    /* ── Connector cards ── */
+    .connector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .connector-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px; transition: border-color .2s; }
+    .connector-card:hover { border-color: #58a6ff; }
+    .connector-card .label { font-size: .7rem; color: #484f58; text-transform: uppercase; letter-spacing: .5px; }
+    .connector-card .title { font-size: 1.05rem; font-weight: 700; color: #e6edf3; margin: 3px 0; }
+
+    footer { text-align: center; padding: 16px; font-size: .75rem; color: #484f58; border-top: 1px solid #21262d; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">PALFINGER Marine — Crane Electrical Documentation</span>
+  <span class="badge">PAL40</span>
+  <span class="badge badge-green">PFM2100</span>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sidebar-header">Control System</div>
+      <div class="sidebar-group-label">
+        <span>▼</span> PAL40
+        <span class="badge-sm" style="background:#1f3a5f;color:#79c0ff;">ECU</span>
+      </div>
+      <a href="{% url 'pal40:index' %}" class="sidebar-item {% if request.resolver_match.url_name == 'index' and request.resolver_match.app_name == 'pal40' %}active{% endif %}">System Overview</a>
+      {% for conn in nav_connectors %}
+      <a href="{% url 'pal40:connector_detail' conn.pk %}"
+         class="sidebar-item {% if request.resolver_match.url_name == 'connector_detail' and request.resolver_match.kwargs.pk == conn.pk %}active{% endif %}">
+        {{ conn.designation }} — {{ conn.color }}
+      </a>
+      {% endfor %}
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <div class="sidebar-section">
+      <div class="sidebar-header">Crane Model</div>
+      <div class="sidebar-group-label">
+        <span>▼</span> PFM2100
+        <span class="badge-sm" style="background:#1a3a1a;color:#56d364;">CRANE</span>
+      </div>
+      <a href="{% url 'pfm2100:device_list' %}"
+         class="sidebar-item {% if request.resolver_match.url_name == 'device_list' %}active{% endif %}">
+        All Devices
+      </a>
+      {% for dev in nav_pfm_devices %}
+      <a href="{% url 'pfm2100:device_detail' dev.pk %}"
+         class="sidebar-item {% if request.resolver_match.url_name == 'device_detail' and request.resolver_match.kwargs.pk == dev.pk %}active{% endif %}"
+         title="{{ dev.description }}">
+        {% if dev.part_number and dev.part_number != '_' %}
+          <span style="font-family:monospace;font-size:.72rem;color:#8b949e;">{{ dev.part_number }}</span><br>
+        {% endif %}
+        <span style="font-size:.77rem;">{{ dev.description|truncatechars:28 }}</span>
+      </a>
+      {% endfor %}
+    </div>
+
+  </nav>
+
+  <!-- ── Main content ── -->
+  <div class="main-wrap">
+    {% block breadcrumb %}{% endblock %}
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+    <footer>PALFINGER Marine &mdash; PAL40 &amp; PFM2100 Engineering Reference &mdash; IEC 13849 PL c</footer>
+  </div>
+
+</div>
+</body>
+</html>
