@@ -4,22 +4,26 @@
 {% block breadcrumb %}
 <nav class="breadcrumb">
   <a href="{% url 'pal40:index' %}">Home</a>
-  <span>/</span> Connector {{ connector.designation }} &mdash; Molex {{ connector.color }}
+  <span class="sep">/</span>
+  Connector {{ connector.designation }} — Molex {{ connector.color }}
 </nav>
 {% endblock %}
 
 {% block content %}
 
-<div class="card">
-  <h2>{{ connector.designation }} &mdash; Molex {{ connector.color }} &mdash; 56-pin</h2>
-  <p style="color:#8b949e;font-size:.88rem;margin-top:6px;">{{ connector.primary_role }}</p>
+<div class="page-header">
+  <div>
+    <h1>{{ connector.designation }} — Molex {{ connector.color }}</h1>
+    <div class="ph-sub">{{ connector.primary_role }}</div>
+  </div>
+  <span class="badge badge-GND" style="margin-left:auto;">56 pins</span>
 </div>
 
 <div class="card" style="overflow-x:auto;">
-  <h2>
-    PAL40 {{ connector.designation }} &mdash; {{ connector.color }} Connector
-    <span style="font-size:.75rem;color:#8b949e;font-weight:400;margin-left:8px;">{{ pins|length }} pins</span>
-  </h2>
+  <div class="card-header">
+    <h2>PAL40 {{ connector.designation }} — {{ connector.color }} Connector</h2>
+    <span class="ch-count">{{ pins|length }} pins</span>
+  </div>
 
   <table class="pin-table">
     <thead>
@@ -27,10 +31,10 @@
         <th style="width:42px;text-align:center;">Pin</th>
         <th>Function</th>
         <th style="width:60px;">Cable</th>
-        <th style="width:80px;">Wire / Color</th>
-        <th style="width:110px;">Terminal / Pin</th>
+        <th style="width:90px;">Wire / Color</th>
+        <th style="width:120px;">Terminal / Pin</th>
         <th style="width:70px;">Device</th>
-        <th style="width:140px;">Identification</th>
+        <th style="width:150px;">Identification</th>
         <th style="width:90px;">Device Cable</th>
       </tr>
     </thead>
@@ -47,16 +51,16 @@
         {% if pin.safety_related %}row-safety{% endif %}
       ">
         <td style="text-align:center;font-weight:700;font-family:monospace;">
-          <a href="{% url 'pal40:pin_detail' connector.pk pin.pin_number %}" style="color:inherit;">
+          <a href="{% url 'pal40:pin_detail' connector.pk pin.pin_number %}">
             {{ pin.pin_number }}
           </a>
         </td>
 
         <td>
-          <span class="badge-type {{ pin.signal_type }}" style="margin-right:6px;vertical-align:middle;">{{ pin.signal_type }}</span>
+          <span class="badge badge-{{ pin.signal_type }}" style="margin-right:6px;vertical-align:middle;">{{ pin.signal_type }}</span>
           {{ pin.function }}
           {% if pin.safety_related %}
-            <span class="badge-safety" style="margin-left:6px;vertical-align:middle;">S</span>
+            <span class="badge badge-safety" style="margin-left:6px;vertical-align:middle;">S</span>
           {% endif %}
         </td>
 
@@ -64,17 +68,14 @@
         <td style="font-family:monospace;font-size:.82rem;">{{ pin.wire_color }}</td>
         <td style="font-size:.82rem;">{{ pin.terminal }}</td>
 
-        {# Device column = identification code (B312, Y0, H5 …) #}
-        <td style="font-family:monospace;font-size:.82rem;font-weight:600;">
+        <td style="font-family:monospace;font-size:.82rem;font-weight:600;color:var(--pal-navy);">
           {% if pin.device %}{{ pin.device.identification }}{% endif %}
         </td>
 
-        {# Identification column = device descriptive name #}
-        <td style="font-size:.82rem;color:#c9d1d9;">
+        <td style="font-size:.82rem;color:var(--pal-gray-700);">
           {% if pin.device %}{{ pin.device.name }}{% endif %}
         </td>
 
-        {# Device Cable = cable harness connecting to the device #}
         <td style="font-family:monospace;font-size:.82rem;">
           {% if pin.device %}{{ pin.device.cable }}{% endif %}
         </td>
@@ -86,37 +87,45 @@
 
 <!-- Legend -->
 <div class="card">
-  <h2>Legend</h2>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:.8rem;">
-    <span><span class="badge-type DI">DI</span> Digital Input</span>
-    <span><span class="badge-type DO">DO</span> Digital Output</span>
-    <span><span class="badge-type AI">AI</span> Analog Input (4–20 mA)</span>
-    <span><span class="badge-type CAN">CAN</span> CAN Bus</span>
-    <span><span class="badge-type PWR">PWR</span> Power Supply</span>
-    <span><span class="badge-type GND">GND</span> Ground / Return</span>
-    <span><span class="badge-safety">S</span> Safety-related signal</span>
+  <div class="card-header"><h2>Legend</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:.82rem;align-items:center;">
+    <span><span class="badge badge-DI">DI</span> Digital Input</span>
+    <span><span class="badge badge-DO">DO</span> Digital Output</span>
+    <span><span class="badge badge-AI">AI</span> Analog Input (4–20 mA)</span>
+    <span><span class="badge badge-CAN">CAN</span> CAN Bus</span>
+    <span><span class="badge badge-PWR">PWR</span> Power Supply</span>
+    <span><span class="badge badge-GND">GND</span> Ground / Return</span>
+    <span><span class="badge badge-safety">S</span> Safety-related signal</span>
   </div>
 </div>
 
 <style>
 .pin-table { width:100%; border-collapse:collapse; font-size:.83rem; }
 .pin-table thead th {
-  background:#21262d; color:#8b949e; text-align:left;
-  padding:8px 10px; border-bottom:2px solid #30363d;
-  font-weight:700; text-transform:uppercase; letter-spacing:.4px; font-size:.72rem;
-  position:sticky; top:0;
+  background: var(--pal-navy);
+  color: var(--pal-white);
+  text-align: left;
+  padding: 9px 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-size: .72rem;
+  position: sticky;
+  top: 0;
 }
-.pin-table tbody td { padding:6px 10px; border-bottom:1px solid #21262d; vertical-align:middle; }
-.pin-table tbody tr:hover td { background:#1c2128; }
+.pin-table thead th:first-child { border-radius: var(--radius) 0 0 0; }
+.pin-table thead th:last-child  { border-radius: 0 var(--radius) 0 0; }
+.pin-table tbody td { padding: 7px 10px; border-bottom: 1px solid var(--pal-border); vertical-align: middle; }
+.pin-table tbody tr:hover td { background: var(--pal-orange-light); }
 
 /* Row tints by signal type */
-.row-gnd td  { color:#6e7681; }
-.row-pwr td  { background:rgba(74,21,21,.15); }
-.row-can td  { background:rgba(61,31,94,.18); }
-.row-di  td  { background:rgba(31,58,95,.12); }
-.row-do  td  { background:rgba(59,36,18,.15); }
-.row-ai  td  { background:rgba(26,58,26,.15); }
-.row-safety  { border-left:3px solid #ff7b72 !important; }
+.row-gnd td { color: var(--pal-gray-300); background: var(--pal-gray-50); }
+.row-pwr td { background: #FFF5F5; }
+.row-can td { background: #F3EFFC; }
+.row-di  td { background: #EBF4FC; }
+.row-do  td { background: #FFF8F0; }
+.row-ai  td { background: #F0FAF0; }
+.row-safety { border-left: 3px solid var(--pal-orange) !important; }
 </style>
 
 {% endblock %}

@@ -7,19 +7,24 @@
 
 {% block content %}
 
-<div class="card">
-  <h2>PAL40 Control System — Marine Crane ECU</h2>
-  <p style="color:#8b949e;font-size:.88rem;margin-bottom:16px;">
-    The PALTRONIC 40 is PALFINGER's primary electronic overload protection and motion control unit.
-    It operates via two 56-pin Molex connectors — C70 (Blue) and C71 (Grey).
-  </p>
-  <table>
-    <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+<div class="page-header">
+  <div>
+    <h1>PAL40 Control System</h1>
+    <div class="ph-sub">PALTRONIC 40 Marine Crane ECU — Electrical Documentation</div>
+  </div>
+  <span class="badge badge-DI" style="margin-left:auto;">IEC 13849 PL&nbsp;c</span>
+</div>
+
+<div class="card card-accent">
+  <div class="card-header">
+    <h2>ECU Specifications</h2>
+  </div>
+  <table class="spec-table">
     <tbody>
       <tr><td>Supply voltage</td><td>8 – 32 V DC</td></tr>
       <tr><td>Max total load current</td><td>10 A</td></tr>
       <tr><td>Operating temperature</td><td>−40 °C to +60 °C</td></tr>
-      <tr><td>Safety level</td><td>IEC 13849 PL c</td></tr>
+      <tr><td>Safety level</td><td><span class="badge badge-safety">IEC 13849 PL c</span></td></tr>
       <tr><td>CAN networks</td><td>2 independent buses</td></tr>
       <tr><td>Analog inputs</td><td>4 – 20 mA current loop</td></tr>
     </tbody>
@@ -30,28 +35,24 @@
   {% for crane in cranes %}
     {% for cs in crane.control_systems.all %}
       <div class="card">
-        <h2>{{ crane.name }} &mdash; {{ cs.name }}</h2>
-        <div class="connector-grid">
+        <div class="card-header">
+          <h2>{{ crane.name }} — {{ cs.name }}</h2>
+          <span class="ch-count">{{ cs.connectors.count }} connectors</span>
+        </div>
+        <div class="grid-2">
           {% for conn in cs.connectors.all %}
-          <a href="{% url 'pal40:connector_detail' conn.pk %}" style="text-decoration:none;">
-            <div class="connector-card">
-              <div class="label">Connector</div>
-              <div class="title">{{ conn.designation }}</div>
-              <div style="color:#8b949e;font-size:.82rem;">Molex {{ conn.color }} &mdash; {{ conn.connector_type }}</div>
-              <div class="meta" style="margin-top:10px;">
-                <strong style="color:#e6edf3;">{{ conn.pins.count }}</strong>
-                <span style="color:#8b949e;"> pins</span>
-              </div>
-              <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;font-size:.72rem;">
-                {% for pin in conn.pins.all %}
-                  {% if pin.safety_related %}
-                    <span style="background:#6e1111;color:#ff7b72;padding:1px 5px;border-radius:3px;">{{ pin.pin_number }}</span>
-                  {% endif %}
-                {% endfor %}
-              </div>
-              <div class="meta" style="margin-top:10px;color:#c9d1d9;font-size:.8rem;">{{ conn.primary_role|truncatechars:90 }}</div>
-              <div style="margin-top:12px;color:#58a6ff;font-size:.8rem;">View pin table →</div>
+          <a href="{% url 'pal40:connector_detail' conn.pk %}" class="item-card">
+            <div class="ic-label">Connector</div>
+            <div class="ic-title">{{ conn.designation }}</div>
+            <div class="ic-sub">Molex {{ conn.color }} — {{ conn.connector_type }}</div>
+            <div class="stat-row">
+              <span class="stat-chip"><strong>{{ conn.pins.count }}</strong> pins</span>
+              {% with conn.pins.all as all_pins %}
+                {% for pin in all_pins %}{% if pin.safety_related %}{% if forloop.first %}<span class="stat-chip" style="background:#FDE8DF;border-color:#F05A28;color:#C94416;"><strong>S</strong> Safety-related</span>{% endif %}{% endif %}{% endfor %}
+              {% endwith %}
             </div>
+            <div class="ic-body">{{ conn.primary_role|truncatechars:90 }}</div>
+            <span class="ic-arrow">View pin table →</span>
           </a>
           {% endfor %}
         </div>
@@ -60,8 +61,7 @@
   {% endfor %}
 {% else %}
   <div class="card">
-    <h2>No data loaded yet</h2>
-    <p style="color:#8b949e;">Run: <code>py manage.py load_pal40_data</code> to populate the database.</p>
+    <div class="info-box">Run <code>py manage.py load_pal40_data</code> to populate the database.</div>
   </div>
 {% endif %}
 

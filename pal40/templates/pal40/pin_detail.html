@@ -4,47 +4,66 @@
 {% block breadcrumb %}
 <nav class="breadcrumb">
   <a href="{% url 'pal40:index' %}">Home</a>
-  <span>/</span>
+  <span class="sep">/</span>
   <a href="{% url 'pal40:connector_detail' connector.pk %}">{{ connector.designation }}</a>
-  <span>/</span> Pin {{ pin.pin_number }}
+  <span class="sep">/</span> Pin {{ pin.pin_number }}
 </nav>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-  <h2>
-    {{ connector.designation }} &mdash; Pin {{ pin.pin_number }}
-    <span class="badge-type {{ pin.signal_type }}" style="margin-left:8px;">{{ pin.get_signal_type_display }}</span>
-    {% if pin.safety_related %}<span class="badge-safety" style="margin-left:6px;">SAFETY-RELATED</span>{% endif %}
-  </h2>
-  <p style="color:#c9d1d9;font-size:.95rem;margin-top:8px;">{{ pin.function }}</p>
+
+<div class="page-header">
+  <div>
+    <h1>{{ connector.designation }} — Pin {{ pin.pin_number }}</h1>
+    <div class="ph-sub">{{ pin.function }}</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-left:auto;align-items:center;">
+    <span class="badge badge-{{ pin.signal_type }}">{{ pin.get_signal_type_display }}</span>
+    {% if pin.safety_related %}<span class="badge badge-safety">Safety-Related</span>{% endif %}
+  </div>
 </div>
 
-<div class="card">
-  <h2>Electrical Details</h2>
-  <table>
+{% if pin.safety_related %}
+<div class="warn-box">
+  <strong>Safety-related signal.</strong> This pin is part of the IEC 13849 PL c safety architecture.
+  Follow safe work practices when testing or modifying this circuit.
+</div>
+{% endif %}
+
+<div class="card card-accent">
+  <div class="card-header"><h2>Electrical Details</h2></div>
+  <table class="spec-table">
     <tbody>
-      <tr><td style="width:180px;color:#8b949e;">Signal type</td><td>{{ pin.get_signal_type_display }}</td></tr>
-      <tr><td style="color:#8b949e;">Direction</td><td>{{ pin.get_direction_display }}</td></tr>
-      <tr><td style="color:#8b949e;">Cable</td><td style="font-family:monospace;">{{ pin.cable|default:"—" }}</td></tr>
-      <tr><td style="color:#8b949e;">Wire color</td><td>{{ pin.wire_color|default:"—" }}</td></tr>
-      <tr><td style="color:#8b949e;">Terminal / Pin ref</td><td>{{ pin.terminal|default:"—" }}</td></tr>
-      <tr><td style="color:#8b949e;">Safety-related</td><td>{% if pin.safety_related %}<span class="badge-safety">YES</span>{% else %}<span class="badge-ok">NO</span>{% endif %}</td></tr>
+      <tr><td>Signal type</td><td>{{ pin.get_signal_type_display }}</td></tr>
+      <tr><td>Direction</td><td>{{ pin.get_direction_display }}</td></tr>
+      <tr><td>Cable</td><td><code>{{ pin.cable|default:"—" }}</code></td></tr>
+      <tr><td>Wire color</td><td>{{ pin.wire_color|default:"—" }}</td></tr>
+      <tr><td>Terminal / Pin ref</td><td>{{ pin.terminal|default:"—" }}</td></tr>
+      <tr>
+        <td>Safety-related</td>
+        <td>
+          {% if pin.safety_related %}
+            <span class="badge badge-safety">YES</span>
+          {% else %}
+            <span class="badge-ok">NO</span>
+          {% endif %}
+        </td>
+      </tr>
     </tbody>
   </table>
 </div>
 
 {% if pin.device %}
 <div class="card">
-  <h2>Connected Device</h2>
-  <table>
+  <div class="card-header"><h2>Connected Device</h2></div>
+  <table class="spec-table">
     <tbody>
-      <tr><td style="width:180px;color:#8b949e;">Device ID</td><td><strong>{{ pin.device.identification }}</strong></td></tr>
-      <tr><td style="color:#8b949e;">Device name</td><td>{{ pin.device.name }}</td></tr>
-      <tr><td style="color:#8b949e;">Device type</td><td>{{ pin.device.get_device_type_display }}</td></tr>
-      <tr><td style="color:#8b949e;">Cable</td><td style="font-family:monospace;">{{ pin.device.cable|default:"—" }}</td></tr>
+      <tr><td>Device ID</td><td><strong style="color:var(--pal-navy);font-family:monospace;">{{ pin.device.identification }}</strong></td></tr>
+      <tr><td>Device name</td><td>{{ pin.device.name }}</td></tr>
+      <tr><td>Device type</td><td>{{ pin.device.get_device_type_display }}</td></tr>
+      <tr><td>Cable</td><td><code>{{ pin.device.cable|default:"—" }}</code></td></tr>
       {% if pin.device.description %}
-      <tr><td style="color:#8b949e;">Description</td><td>{{ pin.device.description }}</td></tr>
+      <tr><td>Description</td><td>{{ pin.device.description }}</td></tr>
       {% endif %}
     </tbody>
   </table>
@@ -53,21 +72,22 @@
 
 {% if pin.description %}
 <div class="card">
-  <h2>Functional Description</h2>
-  <p style="font-size:.88rem;color:#c9d1d9;white-space:pre-wrap;">{{ pin.description }}</p>
+  <div class="card-header"><h2>Functional Description</h2></div>
+  <p style="font-size:.88rem;color:var(--pal-gray-700);white-space:pre-wrap;line-height:1.7;">{{ pin.description }}</p>
 </div>
 {% endif %}
 
 {% if pin.safety_functions.all %}
 <div class="card">
-  <h2>Safety Functions</h2>
+  <div class="card-header"><h2>Safety Functions</h2></div>
   {% for sf in pin.safety_functions.all %}
-  <div style="margin-bottom:12px;padding:12px;background:#0d1117;border-radius:6px;border:1px solid #30363d;">
-    <div style="font-weight:600;color:#e6edf3;">{{ sf.name }}
-      <span style="font-size:.75rem;color:#ff7b72;margin-left:8px;">{{ sf.safety_level }}</span>
-      {% if sf.reaction_time_ms %}<span style="font-size:.75rem;color:#8b949e;margin-left:8px;">&lt; {{ sf.reaction_time_ms }} ms</span>{% endif %}
+  <div style="margin-bottom:12px;padding:14px 16px;background:var(--pal-gray-50);border-radius:var(--radius);border:1px solid var(--pal-border);border-left:4px solid var(--pal-orange);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-weight:700;color:var(--pal-navy);">{{ sf.name }}</span>
+      <span class="badge badge-safety">{{ sf.safety_level }}</span>
+      {% if sf.reaction_time_ms %}<span class="stat-chip">&lt; {{ sf.reaction_time_ms }} ms</span>{% endif %}
     </div>
-    <div style="font-size:.85rem;color:#8b949e;margin-top:6px;">{{ sf.description }}</div>
+    <div style="font-size:.85rem;color:var(--pal-gray-700);margin-top:6px;">{{ sf.description }}</div>
   </div>
   {% endfor %}
 </div>
@@ -75,9 +95,15 @@
 
 {% if pin.troubleshooting.all %}
 <div class="card">
-  <h2>Troubleshooting</h2>
+  <div class="card-header"><h2>Troubleshooting</h2></div>
   <table>
-    <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Diagnostic Procedure</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Symptom</th>
+        <th>Likely Cause</th>
+        <th>Diagnostic Procedure</th>
+      </tr>
+    </thead>
     <tbody>
       {% for note in pin.troubleshooting.all %}
       <tr>
@@ -93,17 +119,20 @@
 
 {% if pin.signal_groups.all %}
 <div class="card">
-  <h2>Signal Groups</h2>
-  {% for sg in pin.signal_groups.all %}
-  <div class="pill">{{ sg.name }}</div>
-  {% endfor %}
+  <div class="card-header"><h2>Signal Groups</h2></div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+    {% for sg in pin.signal_groups.all %}
+    <span class="stat-chip">{{ sg.name }}</span>
+    {% endfor %}
+  </div>
 </div>
 {% endif %}
 
 {% if pin.notes %}
 <div class="card">
-  <h2>Notes</h2>
-  <p style="font-size:.88rem;color:#8b949e;">{{ pin.notes }}</p>
+  <div class="card-header"><h2>Notes</h2></div>
+  <p style="font-size:.88rem;color:var(--pal-gray-700);">{{ pin.notes }}</p>
 </div>
 {% endif %}
+
 {% endblock %}

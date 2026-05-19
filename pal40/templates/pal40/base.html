@@ -3,140 +3,507 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Marine Crane Documentation{% endblock %}</title>
+  <title>{% block title %}Marine Crane Documentation{% endblock %} | PALFINGER</title>
   <style>
+    /* ── PALFINGER Design Tokens ─────────────────────────────────────── */
+    :root {
+      --pal-orange:       #F05A28;
+      --pal-orange-dark:  #C94416;
+      --pal-orange-light: #FDE8DF;
+      --pal-navy:         #1C3A5C;
+      --pal-navy-dark:    #0F2438;
+      --pal-navy-mid:     #2E5F8A;
+      --pal-charcoal:     #2D2D2D;
+      --pal-gray-700:     #4A4A4A;
+      --pal-gray-500:     #767676;
+      --pal-gray-300:     #BDBDBD;
+      --pal-gray-100:     #F4F4F4;
+      --pal-gray-50:      #FAFAFA;
+      --pal-white:        #FFFFFF;
+      --pal-border:       #E0E0E0;
+      --pal-shadow:       0 2px 8px rgba(0,0,0,.10);
+      --pal-shadow-md:    0 4px 16px rgba(0,0,0,.12);
+      --radius:           4px;
+      --font:             'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; display: flex; flex-direction: column; }
-
-    a { color: #58a6ff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    /* ── Top header ── */
-    header {
-      background: #161b22; border-bottom: 1px solid #30363d;
-      padding: 10px 20px; display: flex; align-items: center; gap: 12px;
-      position: sticky; top: 0; z-index: 100;
+    body {
+      font-family: var(--font);
+      background: var(--pal-gray-50);
+      color: var(--pal-charcoal);
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
     }
-    header .logo { font-size: 1rem; font-weight: 700; color: #e6edf3; letter-spacing: .4px; }
-    header .badge { background: #1f6feb; color: #fff; font-size: .68rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
-    header .badge-green { background: #1a5e2a; color: #56d364; }
+    a { color: var(--pal-navy-mid); text-decoration: none; }
+    a:hover { color: var(--pal-orange); text-decoration: underline; }
 
-    /* ── Layout ── */
+    /* ── Top bar (PALFINGER orange stripe) ───────────────────────────── */
+    .topbar {
+      background: var(--pal-orange);
+      height: 4px;
+      width: 100%;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    header {
+      background: var(--pal-white);
+      border-bottom: 1px solid var(--pal-border);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: var(--pal-shadow);
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--pal-orange);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo-mark svg { width: 22px; height: 22px; fill: white; }
+    .logo-text {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--pal-navy);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .logo-sub {
+      font-size: .68rem;
+      font-weight: 400;
+      color: var(--pal-gray-500);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-top: 1px;
+    }
+    .header-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--pal-border);
+      margin: 0 4px;
+    }
+    .header-title {
+      font-size: .82rem;
+      color: var(--pal-gray-500);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+    .header-badges { margin-left: auto; display: flex; gap: 8px; }
+    .hbadge {
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .hbadge-orange { background: var(--pal-orange); color: white; }
+    .hbadge-navy   { background: var(--pal-navy);   color: white; }
+
+    /* ── Layout ───────────────────────────────────────────────────────── */
     .layout { display: flex; flex: 1; min-height: 0; }
 
-    /* ── Sidebar ── */
+    /* ── Sidebar ──────────────────────────────────────────────────────── */
     .sidebar {
-      width: 230px; min-width: 230px; background: #161b22;
-      border-right: 1px solid #30363d; overflow-y: auto;
-      padding: 12px 0; position: sticky; top: 41px;
-      height: calc(100vh - 41px);
+      width: 240px;
+      min-width: 240px;
+      background: var(--pal-white);
+      border-right: 1px solid var(--pal-border);
+      overflow-y: auto;
+      position: sticky;
+      top: 60px;
+      height: calc(100vh - 60px);
+      display: flex;
+      flex-direction: column;
     }
-    .sidebar-section { margin-bottom: 4px; }
-    .sidebar-header {
-      font-size: .7rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .8px; color: #484f58; padding: 10px 16px 4px;
+    .sidebar-brand-bar {
+      background: var(--pal-navy);
+      padding: 14px 18px;
+      flex-shrink: 0;
     }
-    .sidebar-group-label {
-      display: flex; align-items: center; gap: 8px;
-      font-size: .82rem; font-weight: 600; color: #e6edf3;
-      padding: 7px 16px; cursor: pointer; user-select: none;
+    .sidebar-brand-bar span {
+      font-size: .7rem;
+      font-weight: 700;
+      color: rgba(255,255,255,.6);
+      text-transform: uppercase;
+      letter-spacing: .8px;
     }
-    .sidebar-group-label .arrow { font-size: .65rem; color: #8b949e; transition: transform .15s; }
-    .sidebar-group-label .badge-sm {
-      font-size: .62rem; padding: 1px 6px; border-radius: 8px;
-      font-weight: 700; margin-left: auto;
+    .sidebar-section { padding: 8px 0; }
+    .sidebar-section-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+      color: var(--pal-gray-500);
+      padding: 10px 18px 4px;
     }
-    .sidebar-group-label:hover { background: #1c2128; }
-
+    .sidebar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--pal-navy);
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+    .sidebar-group .dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
     .sidebar-item {
-      display: block; padding: 5px 16px 5px 32px;
-      font-size: .8rem; color: #8b949e;
-      border-left: 2px solid transparent; transition: all .1s;
+      display: block;
+      padding: 7px 18px 7px 28px;
+      font-size: .81rem;
+      color: var(--pal-gray-700);
+      border-left: 3px solid transparent;
+      transition: all .12s;
     }
-    .sidebar-item:hover { color: #e6edf3; background: #1c2128; border-left-color: #58a6ff; text-decoration: none; }
-    .sidebar-item.active { color: #58a6ff; border-left-color: #58a6ff; background: #1c2128; }
+    .sidebar-item:hover {
+      color: var(--pal-orange);
+      background: var(--pal-orange-light);
+      border-left-color: var(--pal-orange);
+      text-decoration: none;
+    }
+    .sidebar-item.active {
+      color: var(--pal-orange);
+      border-left-color: var(--pal-orange);
+      background: var(--pal-orange-light);
+      font-weight: 600;
+    }
+    .sidebar-item .item-code {
+      font-family: 'Courier New', monospace;
+      font-size: .72rem;
+      color: var(--pal-gray-500);
+      display: block;
+      margin-bottom: 1px;
+    }
+    .sidebar-divider {
+      border: none;
+      border-top: 1px solid var(--pal-border);
+      margin: 6px 18px;
+    }
 
-    .sidebar-divider { border: none; border-top: 1px solid #21262d; margin: 6px 12px; }
+    /* ── Main content ─────────────────────────────────────────────────── */
+    .main-wrap { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
 
-    /* ── Main content ── */
-    .main-wrap { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+    nav.breadcrumb {
+      background: var(--pal-white);
+      border-bottom: 1px solid var(--pal-border);
+      padding: 10px 28px;
+      font-size: .8rem;
+      color: var(--pal-gray-500);
+    }
+    nav.breadcrumb a { color: var(--pal-navy-mid); }
+    nav.breadcrumb a:hover { color: var(--pal-orange); }
+    nav.breadcrumb .sep { margin: 0 6px; color: var(--pal-gray-300); }
 
-    nav.breadcrumb { padding: 8px 24px; font-size: .82rem; color: #8b949e; border-bottom: 1px solid #21262d; background: #0d1117; }
-    nav.breadcrumb a { color: #58a6ff; }
-    nav.breadcrumb span { margin: 0 5px; }
+    main { max-width: 1280px; margin: 0 auto; padding: 24px 28px; width: 100%; }
 
-    main { max-width: 1200px; margin: 0 auto; padding: 20px 24px; width: 100%; }
+    /* ── Page header ─────────────────────────────────────────────────── */
+    .page-header {
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 2px solid var(--pal-orange);
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+    }
+    .page-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--pal-navy);
+      line-height: 1.2;
+    }
+    .page-header .ph-sub {
+      font-size: .82rem;
+      color: var(--pal-gray-500);
+      font-weight: 400;
+      margin-top: 3px;
+    }
 
-    /* ── Cards ── */
-    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px 20px; margin-bottom: 18px; }
-    .card h2 { font-size: .95rem; font-weight: 700; color: #e6edf3; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
-    .card h3 { font-size: .88rem; font-weight: 600; color: #e6edf3; margin: 12px 0 8px; }
+    /* ── Cards ────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--pal-white);
+      border: 1px solid var(--pal-border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--pal-shadow);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--pal-border);
+    }
+    .card-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--pal-navy);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .card-header .ch-count {
+      font-size: .75rem;
+      color: var(--pal-gray-500);
+      font-weight: 400;
+      margin-left: auto;
+    }
+    .card-accent { border-top: 3px solid var(--pal-orange); }
 
-    /* ── Tables ── */
-    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-    thead th { background: #21262d; color: #8b949e; text-align: left; padding: 7px 10px; border-bottom: 1px solid #30363d; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; font-size: .72rem; }
-    tbody tr:hover { background: #1c2128; }
-    td { padding: 6px 10px; border-bottom: 1px solid #21262d; vertical-align: top; }
+    /* ── Tables ───────────────────────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    thead th {
+      background: var(--pal-navy);
+      color: var(--pal-white);
+      text-align: left;
+      padding: 9px 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      font-size: .72rem;
+    }
+    thead th:first-child { border-radius: var(--radius) 0 0 0; }
+    thead th:last-child  { border-radius: 0 var(--radius) 0 0; }
+    tbody tr:nth-child(even) { background: var(--pal-gray-50); }
+    tbody tr:hover { background: var(--pal-orange-light); }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--pal-border); vertical-align: middle; }
+    td a { color: var(--pal-navy-mid); font-weight: 500; }
+    td a:hover { color: var(--pal-orange); }
 
-    /* ── Badges ── */
-    .badge-type { display: inline-block; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
-    .DI  { background: #1f3a5f; color: #79c0ff; }
-    .DO  { background: #3b2412; color: #ffa657; }
-    .AI  { background: #1a3a1a; color: #56d364; }
-    .AO  { background: #2a2a00; color: #e3b341; }
-    .CAN { background: #3d1f5e; color: #d2a8ff; }
-    .PWR { background: #4a1515; color: #ff7b72; }
-    .GND { background: #21262d; color: #8b949e; }
-    .badge-safety { display: inline-block; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #6e1111; color: #ff7b72; }
-    .badge-ok     { background: #1a3a1a; color: #56d364; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; display: inline-block; }
-    .pill { display: inline-block; font-size: .7rem; padding: 1px 8px; border-radius: 10px; margin: 2px; border: 1px solid #30363d; color: #c9d1d9; }
+    /* ── Signal type badges ───────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+    .badge-DI  { background: #E3F0FB; color: #1565C0; border: 1px solid #90CAF9; }
+    .badge-DO  { background: #FFF3E0; color: #E65100; border: 1px solid #FFB74D; }
+    .badge-AI  { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+    .badge-AO  { background: #F3E5F5; color: #6A1B9A; border: 1px solid #CE93D8; }
+    .badge-CAN { background: #EDE7F6; color: #4527A0; border: 1px solid #B39DDB; }
+    .badge-PWR { background: #FFEBEE; color: #C62828; border: 1px solid #EF9A9A; }
+    .badge-GND { background: var(--pal-gray-100); color: var(--pal-gray-500); border: 1px solid var(--pal-gray-300); }
+    .badge-safety { background: var(--pal-orange); color: white; font-size: .65rem; padding: 2px 6px; border-radius: 2px; font-weight: 700; }
+    .badge-ok     { background: #E8F5E9; color: #2E7D32; font-size: .68rem; padding: 2px 6px; border-radius: 2px; display: inline-block; }
 
-    /* ── Connector cards ── */
-    .connector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-    .connector-card { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px; transition: border-color .2s; }
-    .connector-card:hover { border-color: #58a6ff; }
-    .connector-card .label { font-size: .7rem; color: #484f58; text-transform: uppercase; letter-spacing: .5px; }
-    .connector-card .title { font-size: 1.05rem; font-weight: 700; color: #e6edf3; margin: 3px 0; }
+    /* ── Spec table (two-column key-value) ───────────────────────────── */
+    .spec-table td:first-child {
+      width: 200px;
+      color: var(--pal-gray-500);
+      font-weight: 600;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      background: var(--pal-gray-50);
+      white-space: nowrap;
+    }
 
-    footer { text-align: center; padding: 16px; font-size: .75rem; color: #484f58; border-top: 1px solid #21262d; }
+    /* ── Connector / device grid cards ───────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .item-card {
+      background: var(--pal-white);
+      border: 1px solid var(--pal-border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      border-top: 3px solid var(--pal-orange);
+      box-shadow: var(--pal-shadow);
+      transition: box-shadow .15s, transform .15s;
+      text-decoration: none !important;
+      display: block;
+      color: inherit;
+    }
+    .item-card:hover {
+      box-shadow: var(--pal-shadow-md);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+    .item-card .ic-label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--pal-orange);
+      margin-bottom: 4px;
+    }
+    .item-card .ic-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--pal-navy);
+      margin-bottom: 4px;
+    }
+    .item-card .ic-sub {
+      font-size: .78rem;
+      color: var(--pal-gray-500);
+    }
+    .item-card .ic-body {
+      font-size: .8rem;
+      color: var(--pal-gray-700);
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+    .item-card .ic-arrow {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--pal-orange);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    /* ── Stat chips ──────────────────────────────────────────────────── */
+    .stat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .stat-chip {
+      background: var(--pal-gray-100);
+      border: 1px solid var(--pal-border);
+      border-radius: 2px;
+      font-size: .72rem;
+      padding: 3px 10px;
+      color: var(--pal-gray-700);
+    }
+    .stat-chip strong { color: var(--pal-navy); }
+
+    /* ── Alert / info box ────────────────────────────────────────────── */
+    .info-box {
+      background: #E3F0FB;
+      border-left: 4px solid var(--pal-navy-mid);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 12px 16px;
+      font-size: .83rem;
+      color: var(--pal-navy);
+      margin-bottom: 16px;
+    }
+    .warn-box {
+      background: var(--pal-orange-light);
+      border-left: 4px solid var(--pal-orange);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 12px 16px;
+      font-size: .83rem;
+      color: var(--pal-charcoal);
+      margin-bottom: 16px;
+    }
+    .warn-box strong { color: var(--pal-orange-dark); }
+
+    /* ── Wire color swatches ──────────────────────────────────────────── */
+    .wire-swatch {
+      display: inline-block; width: 10px; height: 10px;
+      border-radius: 50%; margin-right: 5px; vertical-align: middle;
+      border: 1px solid var(--pal-border);
+    }
+    [data-color="RD"] { background: #C0392B; }
+    [data-color="BK"] { background: #2C2C2C; border-color:#999; }
+    [data-color="BU"] { background: #2980B9; }
+    [data-color="YE"] { background: #F1C40F; }
+    [data-color="GN"] { background: #27AE60; }
+    [data-color="WH"] { background: #ECEFF1; border-color:#AAA; }
+    [data-color="BN"] { background: #8D4E2A; }
+    [data-color="GY"] { background: #7F8C8D; }
+    [data-color="VT"] { background: #8E44AD; }
+    [data-color="PK"] { background: #E91E8C; }
+    [data-color="GN/YE"] { background: linear-gradient(90deg,#27AE60 50%,#F1C40F 50%); }
+    [data-color="BU/RD"] { background: linear-gradient(90deg,#2980B9 50%,#C0392B 50%); }
+    [data-color="GY/PK"] { background: linear-gradient(90deg,#7F8C8D 50%,#E91E8C 50%); }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    footer {
+      background: var(--pal-navy);
+      color: rgba(255,255,255,.55);
+      text-align: center;
+      padding: 20px 28px;
+      font-size: .75rem;
+      letter-spacing: .3px;
+      flex-shrink: 0;
+    }
+    footer strong { color: rgba(255,255,255,.85); }
+    footer .ft-orange { color: var(--pal-orange); }
   </style>
 </head>
 <body>
 
+<div class="topbar"></div>
+
+<!-- ── Header ── -->
 <header>
-  <span class="logo">PALFINGER Marine — Crane Electrical Documentation</span>
-  <span class="badge">PAL40</span>
-  <span class="badge badge-green">PFM2100</span>
+  <a href="{% url 'pal40:index' %}" class="header-logo">
+    <div class="logo-mark">
+      <!-- P lettermark -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 3h8c3.3 0 6 2.7 6 6s-2.7 6-6 6H8v6H4V3zm4 8h4c1.1 0 2-.9 2-2s-.9-2-2-2H8v4z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">PALFINGER</div>
+      <div class="logo-sub">Marine</div>
+    </div>
+  </a>
+  <div class="header-divider"></div>
+  <span class="header-title">Crane Electrical Documentation</span>
+  <div class="header-badges">
+    <span class="hbadge hbadge-orange">PAL40</span>
+    <span class="hbadge hbadge-navy">PFM2100</span>
+  </div>
 </header>
 
 <div class="layout">
 
   <!-- ── Sidebar ── -->
   <nav class="sidebar">
+    <div class="sidebar-brand-bar">
+      <span>Navigation</span>
+    </div>
 
+    <!-- PAL40 section -->
     <div class="sidebar-section">
-      <div class="sidebar-header">Control System</div>
-      <div class="sidebar-group-label">
-        <span>▼</span> PAL40
-        <span class="badge-sm" style="background:#1f3a5f;color:#79c0ff;">ECU</span>
+      <div class="sidebar-section-label">Control System</div>
+      <div class="sidebar-group">
+        <span class="dot" style="background:var(--pal-orange);"></span>
+        PAL40 ECU
       </div>
-      <a href="{% url 'pal40:index' %}" class="sidebar-item {% if request.resolver_match.url_name == 'index' and request.resolver_match.app_name == 'pal40' %}active{% endif %}">System Overview</a>
+      <a href="{% url 'pal40:index' %}"
+         class="sidebar-item {% if request.resolver_match.url_name == 'index' and request.resolver_match.app_name == 'pal40' %}active{% endif %}">
+        System Overview
+      </a>
       {% for conn in nav_connectors %}
       <a href="{% url 'pal40:connector_detail' conn.pk %}"
          class="sidebar-item {% if request.resolver_match.url_name == 'connector_detail' and request.resolver_match.kwargs.pk == conn.pk %}active{% endif %}">
-        {{ conn.designation }} — {{ conn.color }}
+        {{ conn.designation }} — Molex {{ conn.color }}
       </a>
       {% endfor %}
     </div>
 
     <hr class="sidebar-divider">
 
+    <!-- PFM2100 section -->
     <div class="sidebar-section">
-      <div class="sidebar-header">Crane Model</div>
-      <div class="sidebar-group-label">
-        <span>▼</span> PFM2100
-        <span class="badge-sm" style="background:#1a3a1a;color:#56d364;">CRANE</span>
+      <div class="sidebar-section-label">Crane Model</div>
+      <div class="sidebar-group">
+        <span class="dot" style="background:var(--pal-navy-mid);"></span>
+        PFM2100
       </div>
       <a href="{% url 'pfm2100:device_list' %}"
          class="sidebar-item {% if request.resolver_match.url_name == 'device_list' %}active{% endif %}">
@@ -147,22 +514,23 @@
          class="sidebar-item {% if request.resolver_match.url_name == 'device_detail' and request.resolver_match.kwargs.pk == dev.pk %}active{% endif %}"
          title="{{ dev.description }}">
         {% if dev.part_number and dev.part_number != '_' %}
-          <span style="font-family:monospace;font-size:.72rem;color:#8b949e;">{{ dev.part_number }}</span><br>
+          <span class="item-code">{{ dev.part_number }}</span>
         {% endif %}
-        <span style="font-size:.77rem;">{{ dev.description|truncatechars:28 }}</span>
+        {{ dev.description|truncatechars:30 }}
       </a>
       {% endfor %}
     </div>
-
   </nav>
 
-  <!-- ── Main content ── -->
+  <!-- ── Main ── -->
   <div class="main-wrap">
     {% block breadcrumb %}{% endblock %}
-    <main>
-      {% block content %}{% endblock %}
-    </main>
-    <footer>PALFINGER Marine &mdash; PAL40 &amp; PFM2100 Engineering Reference &mdash; IEC 13849 PL c</footer>
+    <main>{% block content %}{% endblock %}</main>
+    <footer>
+      <strong>PALFINGER Marine</strong> &nbsp;·&nbsp;
+      <span class="ft-orange">PAL40 &amp; PFM2100</span> Engineering Reference &nbsp;·&nbsp;
+      IEC 13849 PL&nbsp;c &nbsp;·&nbsp; EN&nbsp;13852
+    </footer>
   </div>
 
 </div>

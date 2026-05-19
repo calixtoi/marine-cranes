@@ -4,25 +4,32 @@
 {% block breadcrumb %}
 <nav class="breadcrumb">
   <a href="{% url 'pal40:index' %}">Home</a>
-  <span>/</span> PFM2100 <span>/</span> All Devices
+  <span class="sep">/</span>
+  PFM2100
+  <span class="sep">/</span>
+  All Devices
 </nav>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-  <h2>PFM2100 Marine Crane — Device Registry</h2>
-  <p style="color:#8b949e;font-size:.87rem;">
-    All electrical and electronic devices fitted to the PFM2100 crane, with part numbers,
-    classifications, connector types, and cable identifications.
-  </p>
+
+<div class="page-header">
+  <div>
+    <h1>PFM2100 Marine Crane</h1>
+    <div class="ph-sub">Device Registry — Electrical &amp; Electronic Components</div>
+  </div>
+  <span class="badge badge-GND" style="margin-left:auto;">{{ devices|length }} devices</span>
 </div>
 
 <div class="card" style="overflow-x:auto;">
-  <h2>Device Table <span style="font-size:.75rem;color:#8b949e;font-weight:400;">{{ devices|length }} devices</span></h2>
+  <div class="card-header">
+    <h2>Device Table</h2>
+    <span class="ch-count">{{ devices|length }} devices</span>
+  </div>
   <table>
     <thead>
       <tr>
-        <th>#</th>
+        <th style="width:36px;">#</th>
         <th>Part Number</th>
         <th>Description</th>
         <th>Classification</th>
@@ -36,49 +43,49 @@
     <tbody>
       {% for dev in devices %}
       <tr>
-        <td style="color:#484f58;font-size:.75rem;">{{ dev.order }}</td>
+        <td style="color:var(--pal-gray-300);font-size:.75rem;">{{ dev.order }}</td>
         <td>
           <a href="{% url 'pfm2100:device_detail' dev.pk %}">
-            <code style="font-size:.78rem;color:#e6edf3;">
+            <code style="font-size:.78rem;">
               {% if dev.part_number and dev.part_number != '_' %}{{ dev.part_number }}{% else %}—{% endif %}
             </code>
           </a>
         </td>
         <td>
-          <a href="{% url 'pfm2100:device_detail' dev.pk %}" style="color:#c9d1d9;font-weight:600;">
+          <a href="{% url 'pfm2100:device_detail' dev.pk %}" style="font-weight:600;">
             {{ dev.description }}
           </a>
         </td>
         <td>
           {% if 'Analogue' in dev.classification %}
-            <span class="badge-type AI">Analogue Sensor</span>
+            <span class="badge badge-AI">Analogue</span>
           {% elif 'Binary Sensor' in dev.classification %}
-            <span class="badge-type DI">Binary Sensor</span>
+            <span class="badge badge-DI">Binary Sensor</span>
           {% elif 'Lighting' in dev.classification %}
-            <span class="badge-type DO" style="background:#2a1f00;color:#e3b341;">Lighting</span>
+            <span class="badge badge-DO">Lighting</span>
           {% elif 'Communication' in dev.classification %}
-            <span class="badge-type CAN">Comms</span>
+            <span class="badge badge-CAN">Comms</span>
           {% elif 'Safety' in dev.classification %}
-            <span class="badge-safety">Safety</span>
+            <span class="badge badge-safety">Safety</span>
           {% elif 'Acoustic' in dev.classification %}
-            <span class="badge-type DO">Acoustic</span>
+            <span class="badge badge-DO">Acoustic</span>
           {% elif 'Electromech' in dev.classification %}
-            <span class="badge-type DO">Electromech</span>
+            <span class="badge badge-DO">Electromech</span>
           {% else %}
-            <span style="font-size:.75rem;color:#8b949e;">{{ dev.classification }}</span>
+            <span style="font-size:.75rem;color:var(--pal-gray-500);">{{ dev.classification }}</span>
           {% endif %}
         </td>
         <td style="font-size:.78rem;max-width:200px;">{{ dev.designation|truncatechars:50 }}</td>
-        <td style="font-size:.78rem;color:#8b949e;max-width:150px;">{{ dev.signal_form|truncatechars:40 }}</td>
+        <td style="font-size:.78rem;color:var(--pal-gray-500);max-width:150px;">{{ dev.signal_form|truncatechars:40 }}</td>
         <td style="font-family:monospace;font-size:.78rem;">
           {% if dev.connector_type and dev.connector_type != '_' %}{{ dev.connector_type }}{% else %}—{% endif %}
         </td>
         <td>
           {% for cable in dev.cables.all %}
-            <span class="pill" style="font-family:monospace;font-size:.72rem;">{{ cable.cable_id }}</span>
+            <span class="stat-chip" style="font-family:monospace;font-size:.72rem;">{{ cable.cable_id }}</span>
           {% endfor %}
         </td>
-        <td style="font-size:.75rem;color:#8b949e;">
+        <td style="font-size:.75rem;color:var(--pal-gray-500);">
           {% for cable in dev.cables.all %}{{ cable.connection_details }}{% endfor %}
         </td>
       </tr>
@@ -86,4 +93,5 @@
     </tbody>
   </table>
 </div>
+
 {% endblock %}

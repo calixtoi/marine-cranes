@@ -3,53 +3,75 @@
 
 {% block breadcrumb %}
 <nav class="breadcrumb">
-  <a href="{% url 'pal40:index' %}">Home</a> <span>/</span>
-  <a href="{% url 'pfm2100:device_list' %}">PFM2100</a> <span>/</span>
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm2100:device_list' %}">PFM2100</a>
+  <span class="sep">/</span>
   {{ device.description }}
 </nav>
 {% endblock %}
 
 {% block content %}
 
-<!-- Header card -->
-<div class="card">
-  <h2>
+<div class="page-header">
+  <div>
     {% if device.part_number and device.part_number != '_' %}
-      <code style="color:#e6edf3;font-size:.95rem;">{{ device.part_number }}</code>
-      <span style="color:#484f58;font-weight:400;margin:0 8px;">—</span>
+      <div style="font-family:monospace;font-size:.78rem;color:var(--pal-orange);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">{{ device.part_number }}</div>
     {% endif %}
-    {{ device.description }}
-  </h2>
-  <p style="color:#8b949e;font-size:.87rem;margin-top:4px;">{{ device.classification }}</p>
+    <h1>{{ device.description }}</h1>
+    <div class="ph-sub">{{ device.classification }}</div>
+  </div>
 </div>
 
 <!-- Device specifications -->
-<div class="card">
-  <h2>Device Specifications</h2>
-  <table>
+<div class="card card-accent">
+  <div class="card-header"><h2>Device Specifications</h2></div>
+  <table class="spec-table">
     <tbody>
-      <tr><td style="width:200px;color:#8b949e;">Part Number</td>
-          <td><code>{% if device.part_number and device.part_number != '_' %}{{ device.part_number }}{% else %}—{% endif %}</code></td></tr>
-      <tr><td style="color:#8b949e;">Description</td><td>{{ device.description }}</td></tr>
-      <tr><td style="color:#8b949e;">Classification</td><td>{{ device.classification }}</td></tr>
-      <tr><td style="color:#8b949e;">Designation</td>
-          <td style="white-space:pre-wrap;">{{ device.designation }}</td></tr>
-      <tr><td style="color:#8b949e;">Type / Function</td>
-          <td style="white-space:pre-wrap;">{{ device.type_function }}</td></tr>
-      <tr><td style="color:#8b949e;">Signal Form</td>
-          <td style="white-space:pre-wrap;">{{ device.signal_form }}</td></tr>
+      <tr>
+        <td>Part Number</td>
+        <td><code>{% if device.part_number and device.part_number != '_' %}{{ device.part_number }}{% else %}—{% endif %}</code></td>
+      </tr>
+      <tr><td>Description</td><td>{{ device.description }}</td></tr>
+      <tr>
+        <td>Classification</td>
+        <td>
+          {% if 'Analogue' in device.classification %}
+            <span class="badge badge-AI">Analogue Sensor</span>
+          {% elif 'Binary Sensor' in device.classification %}
+            <span class="badge badge-DI">Binary Sensor</span>
+          {% elif 'Lighting' in device.classification %}
+            <span class="badge badge-DO">Lighting</span>
+          {% elif 'Communication' in device.classification %}
+            <span class="badge badge-CAN">Communication</span>
+          {% elif 'Safety' in device.classification %}
+            <span class="badge badge-safety">Safety</span>
+          {% elif 'Acoustic' in device.classification %}
+            <span class="badge badge-DO">Acoustic</span>
+          {% elif 'Electromech' in device.classification %}
+            <span class="badge badge-DO">Electromechanical</span>
+          {% else %}
+            {{ device.classification }}
+          {% endif %}
+        </td>
+      </tr>
+      <tr><td>Designation</td><td style="white-space:pre-wrap;">{{ device.designation }}</td></tr>
+      <tr><td>Type / Function</td><td style="white-space:pre-wrap;">{{ device.type_function }}</td></tr>
+      <tr><td>Signal Form</td><td style="white-space:pre-wrap;">{{ device.signal_form }}</td></tr>
       {% if device.details and device.details != '_' %}
-      <tr><td style="color:#8b949e;">Details</td>
-          <td style="white-space:pre-wrap;font-size:.83rem;">{{ device.details }}</td></tr>
+      <tr><td>Details</td><td style="white-space:pre-wrap;font-size:.83rem;">{{ device.details }}</td></tr>
       {% endif %}
       {% if device.classification_notes %}
-      <tr><td style="color:#8b949e;">Classification Notes</td>
-          <td style="font-size:.83rem;">{{ device.classification_notes }}</td></tr>
+      <tr><td>Classification Notes</td><td style="font-size:.83rem;">{{ device.classification_notes }}</td></tr>
       {% endif %}
-      <tr><td style="color:#8b949e;">Connector Type</td>
-          <td><code>{% if device.connector_type and device.connector_type != '_' %}{{ device.connector_type }}{% else %}—{% endif %}</code></td></tr>
-      <tr><td style="color:#8b949e;">Connector Part Number</td>
-          <td><code>{% if device.connector_part_number and device.connector_part_number != '_' %}{{ device.connector_part_number }}{% else %}—{% endif %}</code></td></tr>
+      <tr>
+        <td>Connector Type</td>
+        <td><code>{% if device.connector_type and device.connector_type != '_' %}{{ device.connector_type }}{% else %}—{% endif %}</code></td>
+      </tr>
+      <tr>
+        <td>Connector Part Number</td>
+        <td><code>{% if device.connector_part_number and device.connector_part_number != '_' %}{{ device.connector_part_number }}{% else %}—{% endif %}</code></td>
+      </tr>
     </tbody>
   </table>
 </div>
@@ -57,24 +79,26 @@
 <!-- Cable & wiring tables -->
 {% for cable in device.cables.all %}
 <div class="card">
-  <h2>
-    Cable <code style="color:#e6edf3;">{{ cable.cable_id }}</code>
-    {% if cable.cable_part_number and cable.cable_part_number != '_' %}
-      <span style="color:#8b949e;font-size:.8rem;font-weight:400;margin-left:8px;">Part: {{ cable.cable_part_number }}</span>
-    {% endif %}
+  <div class="card-header">
+    <h2>
+      Cable <code style="font-family:monospace;background:var(--pal-gray-100);padding:2px 8px;border-radius:2px;font-size:.88rem;">{{ cable.cable_id }}</code>
+      {% if cable.cable_part_number and cable.cable_part_number != '_' %}
+        <span style="color:var(--pal-gray-500);font-size:.78rem;font-weight:400;margin-left:8px;">Part: {{ cable.cable_part_number }}</span>
+      {% endif %}
+    </h2>
     {% if cable.connection_details %}
-      <span style="color:#56d364;font-size:.78rem;font-weight:400;margin-left:8px;">{{ cable.connection_details }}</span>
+      <span class="badge badge-ok" style="margin-left:auto;">{{ cable.connection_details }}</span>
     {% endif %}
-  </h2>
+  </div>
 
   {% if cable.junction_box_ref %}
-  <p style="font-size:.82rem;color:#8b949e;margin-bottom:12px;">
-    Junction Box reference: <strong style="color:#c9d1d9;">{{ cable.junction_box_ref }}</strong>
-  </p>
+  <div class="info-box" style="margin-bottom:14px;">
+    Junction Box reference: <strong>{{ cable.junction_box_ref }}</strong>
+  </div>
   {% endif %}
 
   {% if cable.notes %}
-  <div style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:#8b949e;white-space:pre-wrap;">{{ cable.notes }}</div>
+  <div class="warn-box" style="font-size:.82rem;white-space:pre-wrap;">{{ cable.notes }}</div>
   {% endif %}
 
   {% if cable.wires.all %}
@@ -82,8 +106,8 @@
     <thead>
       <tr>
         <th style="width:36px;">#</th>
-        <th style="width:120px;">Wire / Color</th>
-        <th style="width:100px;">Pin (Device)</th>
+        <th style="width:130px;">Wire / Color</th>
+        <th style="width:110px;">Pin (Device)</th>
         <th>Terminal / Connection</th>
         <th>Notes</th>
       </tr>
@@ -91,14 +115,14 @@
     <tbody>
       {% for wire in cable.wires.all %}
       <tr>
-        <td style="color:#484f58;font-size:.72rem;">{{ wire.order }}</td>
+        <td style="color:var(--pal-gray-300);font-size:.72rem;">{{ wire.order }}</td>
         <td>
           <span class="wire-swatch" data-color="{{ wire.wire_color }}"></span>
           <code style="font-size:.8rem;">{{ wire.wire_color }}</code>
         </td>
         <td style="font-family:monospace;font-size:.82rem;">{{ wire.device_pin|default:"—" }}</td>
         <td style="font-size:.83rem;">{{ wire.terminal_ref|default:"—" }}</td>
-        <td style="font-size:.78rem;color:#8b949e;">{{ wire.notes }}</td>
+        <td style="font-size:.78rem;color:var(--pal-gray-500);">{{ wire.notes }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -106,27 +130,5 @@
   {% endif %}
 </div>
 {% endfor %}
-
-<style>
-.wire-swatch {
-  display: inline-block; width: 10px; height: 10px;
-  border-radius: 50%; margin-right: 5px; vertical-align: middle; border: 1px solid #30363d;
-}
-/* Wire color swatches */
-[data-color="RD"], [data-color="RED"] { background: #c0392b; }
-[data-color="BK"], [data-color="BLK"] { background: #2c2c2c; border-color:#8b949e; }
-[data-color="BU"], [data-color="BLU"] { background: #2980b9; }
-[data-color="YE"], [data-color="YEL"] { background: #f1c40f; }
-[data-color="GN"], [data-color="GRN"] { background: #27ae60; }
-[data-color="WH"], [data-color="WHT"] { background: #ecf0f1; border-color:#555; }
-[data-color="BN"], [data-color="BRN"] { background: #8d4e2a; }
-[data-color="GY"], [data-color="GRY"] { background: #7f8c8d; }
-[data-color="VT"]                     { background: #8e44ad; }
-[data-color="PK"]                     { background: #e91e8c; }
-[data-color="OG"]                     { background: #e67e22; }
-[data-color="GN/YE"]                  { background: linear-gradient(90deg,#27ae60 50%,#f1c40f 50%); }
-[data-color="BU/RD"]                  { background: linear-gradient(90deg,#2980b9 50%,#c0392b 50%); }
-[data-color="GY/PK"]                  { background: linear-gradient(90deg,#7f8c8d 50%,#e91e8c 50%); }
-</style>
 
 {% endblock %}
