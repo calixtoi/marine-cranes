@@ -1,0 +1,201 @@
+{% extends "pal40/base.html" %}
+{% block title %}{{ connector.designation }} Wiring — PFM2100{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm2100:device_list' %}">PFM2100</a>
+  <span class="sep">/</span>
+  {{ connector.designation }} Wiring
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>{{ connector.designation }} — PFM2100 Wiring</h1>
+    <div class="ph-sub">
+      Molex {{ connector.color }} &nbsp;·&nbsp; {{ connector.primary_role }}
+    </div>
+  </div>
+  <span class="badge badge-GND" style="margin-left:auto;">{{ pins|length }} pins</span>
+</div>
+
+<div class="info-box" style="margin-bottom:20px;">
+  This table shows how PAL40 <strong>{{ connector.designation }}</strong> pins are wired on the
+  <strong>PFM2100</strong> marine crane — including cable IDs, wire colours, terminal references,
+  and connected devices. Other crane types will have different assignments.
+</div>
+
+<!-- Signal type summary bar -->
+<div class="card" style="padding:14px 20px;margin-bottom:16px;">
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+    {% with di_count=0 do_count=0 ai_count=0 can_count=0 pwr_count=0 gnd_count=0 safety_count=0 %}
+    {% for pin in pins %}
+      {% if pin.signal_type == 'DI' %}<span style="display:none">{% with di_count=di_count|add:1 %}{% endwith %}</span>{% endif %}
+    {% endfor %}
+    {% endwith %}
+    <span style="font-size:.8rem;font-weight:600;color:var(--pal-gray-500);text-transform:uppercase;letter-spacing:.4px;">Signal Types:</span>
+    {% for pin in pins %}{% if forloop.first %}{% endif %}{% endfor %}
+    <span><span class="badge badge-DI">DI</span></span>
+    <span><span class="badge badge-DO">DO</span></span>
+    <span><span class="badge badge-AI">AI</span></span>
+    <span><span class="badge badge-CAN">CAN</span></span>
+    <span><span class="badge badge-PWR">PWR</span></span>
+    <span><span class="badge badge-GND">GND</span></span>
+    <span style="margin-left:auto;font-size:.78rem;color:var(--pal-gray-500);">
+      <span class="badge badge-safety">S</span> = safety-related &nbsp;|&nbsp;
+      Orange left border = safety pin
+    </span>
+  </div>
+</div>
+
+<div class="card" style="overflow-x:auto;">
+  <div class="card-header">
+    <h2>PAL40 {{ connector.designation }} — PFM2100 Crane Wiring</h2>
+    <span class="ch-count">{{ pins|length }} pins</span>
+  </div>
+
+  <table class="wiring-table">
+    <thead>
+      <tr>
+        <th style="width:52px;text-align:center;">Pin</th>
+        <th style="min-width:220px;">Function</th>
+        <th style="width:72px;">Cable</th>
+        <th style="width:100px;">Wire / Color</th>
+        <th style="width:130px;">Terminal / Pin</th>
+        <th style="width:78px;">Device</th>
+        <th style="width:160px;">Identification</th>
+        <th style="width:100px;">Device Cable</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pin in pins %}
+      <tr class="
+        {% if pin.signal_type == 'GND' %}row-gnd
+        {% elif pin.signal_type == 'PWR' %}row-pwr
+        {% elif pin.signal_type == 'CAN' %}row-can
+        {% elif pin.signal_type == 'DI'  %}row-di
+        {% elif pin.signal_type == 'DO'  %}row-do
+        {% elif pin.signal_type == 'AI'  %}row-ai
+        {% endif %}
+        {% if pin.safety_related %}row-safety{% endif %}
+      ">
+        <td style="text-align:center;">
+          <a href="{% url 'pal40:pin_detail' connector.pk pin.pin_number %}"
+             class="pin-num">{{ pin.pin_number }}</a>
+        </td>
+
+        <td>
+          <span class="badge badge-{{ pin.signal_type }}">{{ pin.signal_type }}</span>
+          <span style="margin-left:6px;">{{ pin.function }}</span>
+          {% if pin.safety_related %}
+            <span class="badge badge-safety" style="margin-left:4px;">S</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if pin.cable %}
+            <code class="mono-chip">{{ pin.cable }}</code>
+          {% else %}
+            <span style="color:var(--pal-gray-300);">—</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if pin.wire_color %}
+            <span class="wire-swatch" data-color="{{ pin.wire_color }}"></span>
+            <code style="font-size:.8rem;">{{ pin.wire_color }}</code>
+          {% else %}
+            <span style="color:var(--pal-gray-300);">—</span>
+          {% endif %}
+        </td>
+
+        <td style="font-size:.82rem;">
+          {% if pin.terminal %}{{ pin.terminal }}{% else %}<span style="color:var(--pal-gray-300);">—</span>{% endif %}
+        </td>
+
+        <td>
+          {% if pin.device %}
+            <code class="mono-chip" style="color:var(--pal-navy);font-weight:700;">{{ pin.device.identification }}</code>
+          {% else %}
+            <span style="color:var(--pal-gray-300);">—</span>
+          {% endif %}
+        </td>
+
+        <td style="font-size:.82rem;color:var(--pal-gray-700);">
+          {% if pin.device %}{{ pin.device.name }}{% else %}<span style="color:var(--pal-gray-300);">—</span>{% endif %}
+        </td>
+
+        <td>
+          {% if pin.device and pin.device.cable %}
+            <code class="mono-chip">{{ pin.device.cable }}</code>
+          {% else %}
+            <span style="color:var(--pal-gray-300);">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+.wiring-table { width:100%; border-collapse:collapse; font-size:.83rem; }
+.wiring-table thead th {
+  background: var(--pal-navy);
+  color: var(--pal-white);
+  text-align: left;
+  padding: 10px 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-size: .7rem;
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+}
+.wiring-table thead th:first-child { border-radius: var(--radius) 0 0 0; }
+.wiring-table thead th:last-child  { border-radius: 0 var(--radius) 0 0; }
+.wiring-table tbody td { padding: 8px 12px; border-bottom: 1px solid var(--pal-border); vertical-align: middle; }
+.wiring-table tbody tr:hover td { background: var(--pal-orange-light) !important; }
+
+.row-gnd td { color: var(--pal-gray-400, #9E9E9E); background: var(--pal-gray-50); }
+.row-pwr td { background: #FFF5F5; }
+.row-can td { background: #F3EFFC; }
+.row-di  td { background: #EBF4FC; }
+.row-do  td { background: #FFF8F0; }
+.row-ai  td { background: #F0FAF0; }
+.row-safety { border-left: 3px solid var(--pal-orange) !important; }
+
+.pin-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--pal-navy);
+  color: var(--pal-white);
+  font-family: monospace;
+  font-size: .78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background .12s;
+}
+.pin-num:hover { background: var(--pal-orange); text-decoration: none; color: white; }
+
+.mono-chip {
+  display: inline-block;
+  background: var(--pal-gray-100);
+  border: 1px solid var(--pal-border);
+  border-radius: 2px;
+  padding: 1px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: .78rem;
+}
+</style>
+
+{% endblock %}

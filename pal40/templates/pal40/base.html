@@ -534,6 +534,14 @@
            class="sidebar-item {% if request.resolver_match.url_name == 'device_list' %}active{% endif %}">
           All Devices
         </a>
+        <div class="sidebar-section-label" style="padding-top:8px;padding-bottom:2px;">PAL40 Wiring</div>
+        {% for conn in nav_connectors %}
+        <a href="{% url 'pfm2100:connector_wiring' conn.pk %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'connector_wiring' and request.resolver_match.kwargs.connector_pk == conn.pk %}active{% endif %}">
+          {{ conn.designation }} — Molex {{ conn.color }}
+        </a>
+        {% endfor %}
+        <div class="sidebar-section-label" style="padding-top:8px;padding-bottom:2px;">Devices</div>
         {% for dev in nav_pfm_devices %}
         <a href="{% url 'pfm2100:device_detail' dev.pk %}"
            class="sidebar-item {% if request.resolver_match.url_name == 'device_detail' and request.resolver_match.kwargs.pk == dev.pk %}active{% endif %}"

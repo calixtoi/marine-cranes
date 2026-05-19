@@ -13,6 +13,12 @@ class PFM2100Device(models.Model):
     classification_notes = models.TextField(blank=True)
     connector_type = models.CharField(max_length=20, blank=True)
     connector_part_number = models.CharField(max_length=50, blank=True)
+    image = models.ImageField(upload_to='pfm2100/devices/', blank=True, null=True,
+                              help_text='Device photo (JPG, PNG)')
+    datasheet = models.FileField(upload_to='pfm2100/datasheets/', blank=True, null=True,
+                                 help_text='Datasheet PDF')
+    datasheet_url = models.URLField(blank=True,
+                                    help_text='External datasheet URL (optional)')
 
     class Meta:
         ordering = ['order']

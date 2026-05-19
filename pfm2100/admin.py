@@ -15,10 +15,30 @@ class CableInline(admin.StackedInline):
 
 @admin.register(PFM2100Device)
 class PFM2100DeviceAdmin(admin.ModelAdmin):
-    list_display = ('order', 'part_number', 'description', 'classification', 'connector_type')
+    list_display = ('order', 'part_number', 'description', 'classification', 'connector_type', 'has_image', 'has_datasheet')
     list_display_links = ('part_number', 'description')
     list_editable = ('order',)
     inlines = [CableInline]
+    fieldsets = (
+        ('Device Identity', {
+            'fields': ('order', 'part_number', 'description', 'classification',
+                       'designation', 'type_function', 'signal_form', 'details',
+                       'classification_notes', 'connector_type', 'connector_part_number'),
+        }),
+        ('Media & Documentation', {
+            'fields': ('image', 'datasheet', 'datasheet_url'),
+            'description': 'Upload a device photo (JPG/PNG) and/or a datasheet PDF. '
+                           'An external URL can be used instead of or alongside the uploaded file.',
+        }),
+    )
+
+    @admin.display(boolean=True, description='Photo')
+    def has_image(self, obj):
+        return bool(obj.image)
+
+    @admin.display(boolean=True, description='Datasheet')
+    def has_datasheet(self, obj):
+        return bool(obj.datasheet or obj.datasheet_url)
 
 
 @admin.register(PFM2100Cable)

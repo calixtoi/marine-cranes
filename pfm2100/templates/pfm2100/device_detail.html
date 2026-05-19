@@ -13,6 +13,7 @@
 
 {% block content %}
 
+<!-- Page header with edit link -->
 <div class="page-header">
   <div>
     {% if device.part_number and device.part_number != '_' %}
@@ -21,67 +22,139 @@
     <h1>{{ device.description }}</h1>
     <div class="ph-sub">{{ device.classification }}</div>
   </div>
+  <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}"
+     style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+            background:var(--pal-gray-100);border:1px solid var(--pal-border);border-radius:var(--radius);
+            font-size:.78rem;font-weight:600;color:var(--pal-navy);text-decoration:none;white-space:nowrap;transition:background .12s;"
+     title="Edit in Admin">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+    Edit / Upload
+  </a>
 </div>
 
-<!-- Device specifications -->
-<div class="card card-accent">
-  <div class="card-header"><h2>Device Specifications</h2></div>
-  <table class="spec-table">
-    <tbody>
-      <tr>
-        <td>Part Number</td>
-        <td><code>{% if device.part_number and device.part_number != '_' %}{{ device.part_number }}{% else %}—{% endif %}</code></td>
-      </tr>
-      <tr><td>Description</td><td>{{ device.description }}</td></tr>
-      <tr>
-        <td>Classification</td>
-        <td>
-          {% if 'Analogue' in device.classification %}
-            <span class="badge badge-AI">Analogue Sensor</span>
-          {% elif 'Binary Sensor' in device.classification %}
-            <span class="badge badge-DI">Binary Sensor</span>
-          {% elif 'Lighting' in device.classification %}
-            <span class="badge badge-DO">Lighting</span>
-          {% elif 'Communication' in device.classification %}
-            <span class="badge badge-CAN">Communication</span>
-          {% elif 'Safety' in device.classification %}
-            <span class="badge badge-safety">Safety</span>
-          {% elif 'Acoustic' in device.classification %}
-            <span class="badge badge-DO">Acoustic</span>
-          {% elif 'Electromech' in device.classification %}
-            <span class="badge badge-DO">Electromechanical</span>
-          {% else %}
-            {{ device.classification }}
-          {% endif %}
-        </td>
-      </tr>
-      <tr><td>Designation</td><td style="white-space:pre-wrap;">{{ device.designation }}</td></tr>
-      <tr><td>Type / Function</td><td style="white-space:pre-wrap;">{{ device.type_function }}</td></tr>
-      <tr><td>Signal Form</td><td style="white-space:pre-wrap;">{{ device.signal_form }}</td></tr>
-      {% if device.details and device.details != '_' %}
-      <tr><td>Details</td><td style="white-space:pre-wrap;font-size:.83rem;">{{ device.details }}</td></tr>
+<!-- Top row: specs + photo -->
+<div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;">
+
+  <!-- Device specifications -->
+  <div class="card card-accent" style="margin-bottom:0;">
+    <div class="card-header"><h2>Device Specifications</h2></div>
+    <table class="spec-table">
+      <tbody>
+        <tr>
+          <td>Part Number</td>
+          <td><code>{% if device.part_number and device.part_number != '_' %}{{ device.part_number }}{% else %}—{% endif %}</code></td>
+        </tr>
+        <tr><td>Description</td><td>{{ device.description }}</td></tr>
+        <tr>
+          <td>Classification</td>
+          <td>
+            {% if 'Analogue' in device.classification %}<span class="badge badge-AI">Analogue Sensor</span>
+            {% elif 'Binary Sensor' in device.classification %}<span class="badge badge-DI">Binary Sensor</span>
+            {% elif 'Lighting' in device.classification %}<span class="badge badge-DO">Lighting</span>
+            {% elif 'Communication' in device.classification %}<span class="badge badge-CAN">Communication</span>
+            {% elif 'Safety' in device.classification %}<span class="badge badge-safety">Safety</span>
+            {% elif 'Acoustic' in device.classification %}<span class="badge badge-DO">Acoustic</span>
+            {% elif 'Electromech' in device.classification %}<span class="badge badge-DO">Electromechanical</span>
+            {% else %}{{ device.classification }}{% endif %}
+          </td>
+        </tr>
+        <tr><td>Designation</td><td style="white-space:pre-wrap;">{{ device.designation }}</td></tr>
+        <tr><td>Type / Function</td><td style="white-space:pre-wrap;">{{ device.type_function }}</td></tr>
+        <tr><td>Signal Form</td><td style="white-space:pre-wrap;">{{ device.signal_form }}</td></tr>
+        {% if device.details and device.details != '_' %}
+        <tr><td>Details</td><td style="white-space:pre-wrap;font-size:.83rem;">{{ device.details }}</td></tr>
+        {% endif %}
+        {% if device.classification_notes %}
+        <tr><td>Classification Notes</td><td style="font-size:.83rem;">{{ device.classification_notes }}</td></tr>
+        {% endif %}
+        <tr>
+          <td>Connector Type</td>
+          <td><code>{% if device.connector_type and device.connector_type != '_' %}{{ device.connector_type }}{% else %}—{% endif %}</code></td>
+        </tr>
+        <tr>
+          <td>Connector Part No.</td>
+          <td><code>{% if device.connector_part_number and device.connector_part_number != '_' %}{{ device.connector_part_number }}{% else %}—{% endif %}</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Device photo -->
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:220px;max-width:280px;">
+    <div class="card" style="margin-bottom:0;padding:16px;">
+      <div class="card-header" style="margin-bottom:12px;"><h2>Device Photo</h2></div>
+      {% if device.image %}
+        <img src="{{ device.image.url }}" alt="{{ device.description }}"
+             style="width:100%;border-radius:var(--radius);border:1px solid var(--pal-border);display:block;">
+      {% else %}
+        <div style="width:100%;aspect-ratio:1/1;background:var(--pal-gray-100);border:2px dashed var(--pal-border);
+                    border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;
+                    justify-content:center;gap:8px;color:var(--pal-gray-500);text-align:center;padding:20px;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span style="font-size:.75rem;">No photo uploaded</span>
+        </div>
+        <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}"
+           style="display:block;text-align:center;margin-top:10px;font-size:.75rem;color:var(--pal-orange);">
+          + Upload photo
+        </a>
       {% endif %}
-      {% if device.classification_notes %}
-      <tr><td>Classification Notes</td><td style="font-size:.83rem;">{{ device.classification_notes }}</td></tr>
+    </div>
+
+    <!-- Datasheet -->
+    <div class="card" style="margin-bottom:0;padding:16px;">
+      <div class="card-header" style="margin-bottom:12px;"><h2>Datasheet</h2></div>
+      {% if device.datasheet %}
+        <a href="{{ device.datasheet.url }}" target="_blank" rel="noopener"
+           style="display:flex;align-items:center;gap:8px;padding:10px 14px;
+                  background:var(--pal-navy);color:white;border-radius:var(--radius);
+                  text-decoration:none;font-size:.8rem;font-weight:600;transition:background .12s;"
+           onmouseover="this.style.background='var(--pal-orange)'"
+           onmouseout="this.style.background='var(--pal-navy)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download PDF
+        </a>
       {% endif %}
-      <tr>
-        <td>Connector Type</td>
-        <td><code>{% if device.connector_type and device.connector_type != '_' %}{{ device.connector_type }}{% else %}—{% endif %}</code></td>
-      </tr>
-      <tr>
-        <td>Connector Part Number</td>
-        <td><code>{% if device.connector_part_number and device.connector_part_number != '_' %}{{ device.connector_part_number }}{% else %}—{% endif %}</code></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+      {% if device.datasheet_url %}
+        <a href="{{ device.datasheet_url }}" target="_blank" rel="noopener"
+           style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:8px;
+                  background:var(--pal-gray-100);border:1px solid var(--pal-border);color:var(--pal-navy);
+                  border-radius:var(--radius);text-decoration:none;font-size:.8rem;font-weight:600;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          External Datasheet
+        </a>
+      {% endif %}
+      {% if not device.datasheet and not device.datasheet_url %}
+        <div style="text-align:center;color:var(--pal-gray-500);font-size:.78rem;padding:12px 0;">
+          No datasheet attached
+        </div>
+        <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}"
+           style="display:block;text-align:center;font-size:.75rem;color:var(--pal-orange);">
+          + Add datasheet
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+</div><!-- /top row -->
 
 <!-- Cable & wiring tables -->
 {% for cable in device.cables.all %}
-<div class="card">
+<div class="card" style="margin-top:20px;">
   <div class="card-header">
     <h2>
-      Cable <code style="font-family:monospace;background:var(--pal-gray-100);padding:2px 8px;border-radius:2px;font-size:.88rem;">{{ cable.cable_id }}</code>
+      Cable&nbsp;
+      <code style="font-family:monospace;background:var(--pal-gray-100);padding:2px 8px;border-radius:2px;font-size:.88rem;">{{ cable.cable_id }}</code>
       {% if cable.cable_part_number and cable.cable_part_number != '_' %}
         <span style="color:var(--pal-gray-500);font-size:.78rem;font-weight:400;margin-left:8px;">Part: {{ cable.cable_part_number }}</span>
       {% endif %}
@@ -102,33 +175,188 @@
   {% endif %}
 
   {% if cable.wires.all %}
-  <table>
-    <thead>
-      <tr>
-        <th style="width:36px;">#</th>
-        <th style="width:130px;">Wire / Color</th>
-        <th style="width:110px;">Pin (Device)</th>
-        <th>Terminal / Connection</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for wire in cable.wires.all %}
-      <tr>
-        <td style="color:var(--pal-gray-300);font-size:.72rem;">{{ wire.order }}</td>
-        <td>
-          <span class="wire-swatch" data-color="{{ wire.wire_color }}"></span>
-          <code style="font-size:.8rem;">{{ wire.wire_color }}</code>
-        </td>
-        <td style="font-family:monospace;font-size:.82rem;">{{ wire.device_pin|default:"—" }}</td>
-        <td style="font-size:.83rem;">{{ wire.terminal_ref|default:"—" }}</td>
-        <td style="font-size:.78rem;color:var(--pal-gray-500);">{{ wire.notes }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <!-- Connector diagram + wire table side by side -->
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
+
+    <!-- Pin diagram -->
+    <div>
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--pal-gray-500);margin-bottom:8px;text-align:center;">
+        Connector Face
+      </div>
+      <div class="connector-diagram"
+           data-connector="{{ device.connector_type }}"
+           data-wires='[{% for wire in cable.wires.all %}{"pin":"{{ wire.device_pin|escapejs }}","color":"{{ wire.wire_color|escapejs }}","terminal":"{{ wire.terminal_ref|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'
+           style="width:170px;height:170px;flex-shrink:0;">
+      </div>
+      {% if device.connector_type and device.connector_type != '_' %}
+      <div style="text-align:center;font-size:.7rem;color:var(--pal-gray-500);margin-top:6px;">
+        {{ device.connector_type }}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Wire table -->
+    <table class="wire-table">
+      <thead>
+        <tr>
+          <th style="width:36px;">#</th>
+          <th style="width:130px;">Wire / Color</th>
+          <th style="width:110px;">Pin (Device)</th>
+          <th>Terminal / Connection</th>
+          <th style="width:180px;">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for wire in cable.wires.all %}
+        <tr>
+          <td style="color:var(--pal-gray-300);font-size:.72rem;">{{ wire.order }}</td>
+          <td>
+            <span class="wire-swatch" data-color="{{ wire.wire_color }}"></span>
+            <code style="font-size:.8rem;">{{ wire.wire_color }}</code>
+          </td>
+          <td>
+            {% if wire.device_pin %}
+              <span class="pin-badge">{{ wire.device_pin }}</span>
+            {% else %}
+              <span style="color:var(--pal-gray-300);">—</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.83rem;">{{ wire.terminal_ref|default:"—" }}</td>
+          <td style="font-size:.78rem;color:var(--pal-gray-500);">{{ wire.notes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  </div><!-- /diagram+table grid -->
   {% endif %}
 </div>
 {% endfor %}
+
+<style>
+/* Wire table */
+.wire-table { width:100%; border-collapse:collapse; font-size:.83rem; }
+.wire-table thead th {
+  background: var(--pal-navy); color: var(--pal-white);
+  padding: 9px 12px; font-size:.7rem; font-weight:600;
+  text-transform:uppercase; letter-spacing:.5px; text-align:left;
+}
+.wire-table thead th:first-child { border-radius: var(--radius) 0 0 0; }
+.wire-table thead th:last-child  { border-radius: 0 var(--radius) 0 0; }
+.wire-table tbody td { padding: 8px 12px; border-bottom:1px solid var(--pal-border); vertical-align:middle; }
+.wire-table tbody tr:hover td { background: var(--pal-orange-light); }
+
+/* Pin badge in wire table */
+.pin-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:28px; height:24px; padding:0 6px;
+  background:var(--pal-navy); color:white;
+  border-radius:var(--radius); font-family:monospace;
+  font-size:.75rem; font-weight:700;
+}
+
+/* Responsive: stack on small screens */
+@media (max-width: 700px) {
+  [style*="grid-template-columns:auto 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+
+<script>
+(function () {
+  var COLORS = {
+    'BN':'#8D4E2A','BK':'#2C2C2C','BU':'#2980B9','WH':'#E8ECEF',
+    'GN':'#27AE60','YE':'#F1C40F','RD':'#C0392B','GY':'#7F8C8D',
+    'VT':'#8E44AD','PK':'#E91E8C','OG':'#E67E22'
+  };
+  var LIGHT = {'WH':1,'YE':1,'GN/YE':1};
+
+  function fillFor(code) {
+    var c = code.toUpperCase();
+    if (c === 'GN/YE') return 'url(#gnye)';
+    if (c === 'BU/RD') return 'url(#burd)';
+    if (c === 'GY/PK') return 'url(#gypk)';
+    return COLORS[c] || '#444';
+  }
+
+  function render(el, wires) {
+    var S = 170, cx = S/2, cy = S/2;
+    var bodyR = S * 0.41, innerR = S * 0.345, pinPlaceR = S * 0.23, pinR = S * 0.082;
+
+    /* build pin map */
+    var map = {}, maxPin = 0;
+    wires.forEach(function(w) {
+      var p = parseInt(w.pin, 10);
+      if (!isNaN(p)) { map[p] = w; if (p > maxPin) maxPin = p; }
+    });
+    var n = maxPin || wires.length;
+    if (n < 1) return;
+
+    var svg = '<svg width="'+S+'" height="'+S+'" viewBox="0 0 '+S+' '+S+'" xmlns="http://www.w3.org/2000/svg">';
+    /* defs */
+    svg += '<defs>'
+      + '<radialGradient id="bg'+el.dataset.idx+'"><stop offset="0%" stop-color="#505660"/><stop offset="100%" stop-color="#252830"/></radialGradient>'
+      + '<linearGradient id="gnye"><stop offset="50%" stop-color="#27AE60"/><stop offset="50%" stop-color="#F1C40F"/></linearGradient>'
+      + '<linearGradient id="burd"><stop offset="50%" stop-color="#2980B9"/><stop offset="50%" stop-color="#C0392B"/></linearGradient>'
+      + '<linearGradient id="gypk"><stop offset="50%" stop-color="#7F8C8D"/><stop offset="50%" stop-color="#E91E8C"/></linearGradient>'
+      + '</defs>';
+
+    /* outer shell */
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+bodyR+'" fill="#9AA2AE" stroke="#707880" stroke-width="2.5"/>';
+    /* inner body */
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="url(#bg'+el.dataset.idx+')"/>';
+    /* key notch */
+    svg += '<rect x="'+(cx-5)+'" y="'+(cy-bodyR-5)+'" width="10" height="9" rx="2" fill="#9AA2AE"/>';
+    /* key label */
+    svg += '<text x="'+cx+'" y="'+(cy-bodyR-1)+'" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="6" fill="#555">▲</text>';
+
+    /* pins */
+    for (var i = 1; i <= n; i++) {
+      var ang = (-90 + (i - 1) * 360 / n) * Math.PI / 180;
+      var px = cx + Math.cos(ang) * pinPlaceR;
+      var py = cy + Math.sin(ang) * pinPlaceR;
+      var w = map[i];
+
+      /* pin hole */
+      svg += '<circle cx="'+px+'" cy="'+py+'" r="'+pinR+'" fill="#111" stroke="#3A3F48" stroke-width="1.5"/>';
+
+      if (w) {
+        var fill = fillFor(w.color);
+        var textFill = LIGHT[w.color.toUpperCase()] ? '#333' : '#FFF';
+        /* colored pin contact */
+        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinR*0.72)+'" fill="'+fill+'" stroke="rgba(0,0,0,.3)" stroke-width="1"/>';
+        /* pin number */
+        svg += '<text x="'+px+'" y="'+py+'" text-anchor="middle" dominant-baseline="middle"'
+          + ' font-family="\'Courier New\',monospace" font-size="'+(pinR*0.92)+'" font-weight="bold" fill="'+textFill+'">'+i+'</text>';
+      } else {
+        /* empty pin */
+        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinR*0.55)+'" fill="#2A2D33"/>';
+        svg += '<text x="'+px+'" y="'+py+'" text-anchor="middle" dominant-baseline="middle"'
+          + ' font-family="\'Courier New\',monospace" font-size="'+(pinR*0.8)+'" fill="#555">'+i+'</text>';
+      }
+    }
+
+    /* center dot for 5+ pin connectors */
+    if (n >= 5) {
+      svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(pinR*0.55)+'" fill="#1E2128" stroke="#3A3F48" stroke-width="1"/>';
+    }
+
+    svg += '</svg>';
+    el.innerHTML = svg;
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.connector-diagram').forEach(function (el, idx) {
+      el.dataset.idx = idx;
+      try {
+        var wires = JSON.parse(el.dataset.wires || '[]');
+        if (wires.length) render(el, wires);
+      } catch(e) {}
+    });
+  });
+})();
+</script>
 
 {% endblock %}
