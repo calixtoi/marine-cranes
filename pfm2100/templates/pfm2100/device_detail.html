@@ -125,8 +125,15 @@
       {% endif %}
     </h2>
     {% if cable.connection_details %}
-      <span class="badge badge-ok" style="margin-left:auto;">{{ cable.connection_details }}</span>
+      <span class="badge badge-ok">{{ cable.connection_details }}</span>
     {% endif %}
+    <a href="{% url 'pfm2100:edit_cable_wiring' cable.pk %}" class="edit-wiring-btn" title="Edit wires for {{ cable.cable_id }}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Edit Wiring
+    </a>
   </div>
 
   {% if cable.junction_box_ref %}
@@ -234,6 +241,13 @@
 
 /* Cable card */
 .cable-card { margin-top:20px; }
+.edit-wiring-btn {
+  margin-left:auto; display:inline-flex; align-items:center; gap:5px;
+  padding:5px 11px; background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); font-size:.74rem; font-weight:600; color:var(--pal-navy);
+  text-decoration:none; white-space:nowrap; transition:background .12s;
+}
+.edit-wiring-btn:hover { background:var(--pal-orange-light); color:var(--pal-orange); text-decoration:none; }
 .cable-code {
   font-family:monospace; background:var(--pal-gray-100);
   padding:2px 8px; border-radius:2px; font-size:.88rem; border:1px solid var(--pal-border);

@@ -535,6 +535,11 @@
            style="font-weight:{% if request.resolver_match.url_name == 'connector_map' %}700{% else %}600{% endif %};">
           ⬡ Connector Map
         </a>
+        <a href="{% url 'pfm2100:schematic' %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'schematic' %}active{% endif %}"
+           style="font-weight:{% if request.resolver_match.url_name == 'schematic' %}700{% else %}600{% endif %};">
+          ◈ System Schematic
+        </a>
         <a href="{% url 'pfm2100:device_list' %}"
            class="sidebar-item {% if request.resolver_match.url_name == 'device_list' %}active{% endif %}">
           All Devices

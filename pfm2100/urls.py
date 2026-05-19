@@ -8,4 +8,6 @@ urlpatterns = [
     path('device/<int:pk>/', views.device_detail, name='device_detail'),
     path('wiring/<int:connector_pk>/', views.connector_wiring, name='connector_wiring'),
     path('map/', views.connector_map, name='connector_map'),
+    path('schematic/', views.schematic, name='schematic'),
+    path('cable/<int:cable_pk>/edit/', views.edit_cable_wiring, name='edit_cable_wiring'),
 ]

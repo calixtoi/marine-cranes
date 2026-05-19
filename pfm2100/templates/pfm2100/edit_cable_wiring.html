@@ -1,0 +1,326 @@
+{% extends "pal40/base.html" %}
+{% block title %}Edit Wiring — {{ cable.cable_id }} — {{ device.description }}{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm2100:device_list' %}">PFM2100</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm2100:device_detail' device.pk %}">{{ device.description }}</a>
+  <span class="sep">/</span>
+  Edit Wiring — {{ cable.cable_id }}
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="ph-label">Cable</div>
+    <h1>{{ cable.cable_id }}</h1>
+    <div class="ph-sub">{{ device.description }}</div>
+  </div>
+  <a href="{% url 'pfm2100:device_detail' device.pk %}" class="cancel-btn">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    Cancel
+  </a>
+</div>
+
+<form method="post" id="wiring-form">
+{% csrf_token %}
+{{ formset.management_form }}
+
+<!-- Cable metadata -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header"><h2>Cable Details</h2></div>
+  <div class="meta-grid">
+    {% for field in cable_form %}
+    <div class="meta-field">
+      <label for="{{ field.id_for_label }}" class="meta-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div class="field-error">{{ field.errors.0 }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Wire formset -->
+<div class="card">
+  <div class="card-header">
+    <h2>Wire Terminals</h2>
+    <button type="button" id="add-wire-btn" class="add-wire-btn">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Wire
+    </button>
+  </div>
+
+  <div id="wire-formset">
+    <table class="wf-table" id="wf-tbl">
+      <thead>
+        <tr>
+          <th class="wf-th-del">Del</th>
+          <th class="wf-th-ord">#</th>
+          <th class="wf-th-color">Wire / Color</th>
+          <th class="wf-th-pin">Pin (Device)</th>
+          <th class="wf-th-term">Terminal / Connection</th>
+          <th class="wf-th-notes">Notes</th>
+        </tr>
+      </thead>
+      <tbody id="wf-body">
+        {% for form in formset %}
+        <tr class="wf-row{% if form.instance.pk %} existing{% endif %}" data-row="{{ forloop.counter0 }}">
+          {{ form.id }}
+          <td class="wf-del-cell">
+            {% if form.instance.pk %}
+            <label class="del-chk-lbl" title="Delete this wire">
+              {{ form.DELETE }}
+            </label>
+            {% else %}
+            <button type="button" class="del-new-btn" title="Remove row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            {% endif %}
+          </td>
+          <td class="wf-ord-cell">{{ form.order }}</td>
+          <td class="wf-color-cell">
+            <div class="color-wrap">
+              <span class="color-dot" data-color=""></span>
+              {{ form.wire_color }}
+            </div>
+          </td>
+          <td class="wf-pin-cell">{{ form.device_pin }}</td>
+          <td class="wf-term-cell">{{ form.terminal_ref }}</td>
+          <td class="wf-notes-cell">{{ form.notes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty row template for JS cloning -->
+  <template id="empty-row-tmpl">
+    <tr class="wf-row new-row" data-row="__prefix__">
+      <input type="hidden" name="form-__prefix__-id" value="">
+      <td class="wf-del-cell">
+        <button type="button" class="del-new-btn" title="Remove row">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </td>
+      <td class="wf-ord-cell"><input type="number" name="form-__prefix__-order" value="0" min="0" class="wf-order"></td>
+      <td class="wf-color-cell">
+        <div class="color-wrap">
+          <span class="color-dot" data-color=""></span>
+          <select name="form-__prefix__-wire_color" class="wf-select">
+            <option value="">— not specified</option>
+            <option value="BN">BN — Brown</option>
+            <option value="BK">BK — Black</option>
+            <option value="BU">BU — Blue</option>
+            <option value="WH">WH — White</option>
+            <option value="GN">GN — Green</option>
+            <option value="YE">YE — Yellow</option>
+            <option value="RD">RD — Red</option>
+            <option value="GY">GY — Grey</option>
+            <option value="VT">VT — Violet</option>
+            <option value="PK">PK — Pink</option>
+            <option value="OG">OG — Orange</option>
+            <option value="GN/YE">GN/YE — Green / Yellow</option>
+            <option value="BU/RD">BU/RD — Blue / Red</option>
+            <option value="GY/PK">GY/PK — Grey / Pink</option>
+          </select>
+        </div>
+      </td>
+      <td class="wf-pin-cell"><input type="text" name="form-__prefix__-device_pin" class="wf-pin" placeholder="1"></td>
+      <td class="wf-term-cell"><input type="text" name="form-__prefix__-terminal_ref" class="wf-term" placeholder="T.160.7"></td>
+      <td class="wf-notes-cell"><input type="text" name="form-__prefix__-notes" class="wf-notes" placeholder="Optional notes"></td>
+    </tr>
+  </template>
+
+</div><!-- /card -->
+
+<!-- Save bar -->
+<div class="save-bar">
+  <a href="{% url 'pfm2100:device_detail' device.pk %}" class="cancel-btn">Cancel</a>
+  <button type="submit" class="save-btn">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Save Changes
+  </button>
+</div>
+
+</form>
+
+<style>
+.ph-label {
+  font-size:.68rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.7px; color:var(--pal-orange); margin-bottom:2px;
+}
+
+/* Buttons */
+.cancel-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); font-size:.78rem; font-weight:600; color:var(--pal-navy);
+  text-decoration:none; white-space:nowrap; transition:background .12s;
+}
+.cancel-btn:hover { background:var(--pal-orange-light); color:var(--pal-orange); text-decoration:none; }
+
+.add-wire-btn {
+  margin-left:auto; display:inline-flex; align-items:center; gap:5px;
+  padding:5px 12px; background:var(--pal-orange); border:none;
+  border-radius:var(--radius); font-size:.74rem; font-weight:700; color:white;
+  cursor:pointer; transition:opacity .12s;
+}
+.add-wire-btn:hover { opacity:.85; }
+
+/* Cable meta grid */
+.meta-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:14px 20px;
+  padding:4px 0 8px;
+}
+.meta-field { display:flex; flex-direction:column; gap:4px; }
+.meta-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--pal-gray-500); }
+.meta-field input, .meta-field textarea, .meta-field select {
+  background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); color:var(--pal-text); font-size:.83rem; padding:6px 9px;
+  font-family:inherit; width:100%;
+}
+.meta-field input:focus, .meta-field textarea:focus, .meta-field select:focus {
+  outline:none; border-color:var(--pal-orange); background:var(--pal-surface);
+}
+.meta-field textarea { resize:vertical; min-height:56px; }
+.field-error { font-size:.72rem; color:#E05050; margin-top:2px; }
+
+/* Formset table */
+.wf-table { width:100%; border-collapse:collapse; }
+.wf-table thead th {
+  background:var(--pal-navy); color:white; padding:8px 10px;
+  font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; text-align:left;
+}
+.wf-table thead th:first-child { border-radius:var(--radius) 0 0 0; }
+.wf-table thead th:last-child  { border-radius:0 var(--radius) 0 0; }
+.wf-th-del   { width:36px; text-align:center; }
+.wf-th-ord   { width:56px; }
+.wf-th-color { width:190px; }
+.wf-th-pin   { width:110px; }
+.wf-th-term  { width:160px; }
+
+.wf-row td { padding:6px 10px; border-bottom:1px solid var(--pal-border); vertical-align:middle; }
+.wf-row:hover td { background:var(--pal-orange-light); }
+.wf-row.marked-delete td { opacity:.45; text-decoration:line-through; }
+
+/* Inputs inside table */
+.wf-order, .wf-pin, .wf-term, .wf-notes, .wf-select {
+  background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); color:var(--pal-text); font-size:.8rem; padding:5px 7px;
+  font-family:inherit; width:100%;
+}
+.wf-order { width:50px; }
+.wf-order:focus, .wf-pin:focus, .wf-term:focus, .wf-notes:focus, .wf-select:focus {
+  outline:none; border-color:var(--pal-orange); background:var(--pal-surface);
+}
+
+/* Color dot swatch */
+.color-wrap { display:flex; align-items:center; gap:6px; }
+.color-dot {
+  display:inline-block; width:14px; height:14px;
+  border-radius:50%; border:1px solid var(--pal-border); flex-shrink:0;
+  background:#555;
+}
+
+/* Delete controls */
+.wf-del-cell { text-align:center; }
+.del-chk-lbl { cursor:pointer; display:flex; justify-content:center; }
+.del-chk-lbl input[type=checkbox] {
+  width:16px; height:16px; cursor:pointer; accent-color:#E05050;
+}
+.del-new-btn {
+  background:none; border:none; cursor:pointer; padding:4px;
+  color:var(--pal-gray-500); border-radius:var(--radius);
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.del-new-btn:hover { background:#FFE5E5; color:#E05050; }
+
+/* Save bar */
+.save-bar {
+  position:sticky; bottom:0; z-index:10;
+  display:flex; align-items:center; justify-content:flex-end; gap:10px;
+  background:var(--pal-surface); border-top:1px solid var(--pal-border);
+  padding:12px 0; margin-top:20px;
+}
+.save-btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:9px 20px; background:var(--pal-orange); border:none;
+  border-radius:var(--radius); font-size:.83rem; font-weight:700; color:white;
+  cursor:pointer; transition:opacity .12s;
+}
+.save-btn:hover { opacity:.88; }
+</style>
+
+<script>
+(function () {
+  var HEX = {
+    'BN':'#8D4E2A','BK':'#1E1E1E','BU':'#1A6FA8','WH':'#D8DCE0',
+    'GN':'#1E9455','YE':'#E8B800','RD':'#B03020','GY':'#6E7880',
+    'VT':'#7133A0','PK':'#C8186A','OG':'#D06418',
+    'GN/YE':'#1E9455','BU/RD':'#1A6FA8','GY/PK':'#6E7880'
+  };
+
+  function updateDot(dot, colorCode) {
+    dot.style.background = HEX[colorCode] || (colorCode ? '#888' : 'transparent');
+    dot.style.borderColor = colorCode ? 'var(--pal-border)' : 'var(--pal-border)';
+  }
+
+  function initRow(row) {
+    var sel  = row.querySelector('.wf-select');
+    var dot  = row.querySelector('.color-dot');
+    var del  = row.querySelector('.del-new-btn');
+    var chk  = row.querySelector('input[type=checkbox]');
+
+    if (sel && dot) {
+      updateDot(dot, sel.value);
+      sel.addEventListener('change', function () { updateDot(dot, sel.value); });
+    }
+
+    if (del) {
+      del.addEventListener('click', function () { row.remove(); });
+    }
+
+    if (chk) {
+      chk.addEventListener('change', function () {
+        row.classList.toggle('marked-delete', chk.checked);
+      });
+    }
+  }
+
+  /* "Add Wire" button */
+  var totalForms = document.getElementById('id_form-TOTAL_FORMS');
+  var addBtn     = document.getElementById('add-wire-btn');
+  var tbody      = document.getElementById('wf-body');
+  var tmpl       = document.getElementById('empty-row-tmpl');
+
+  if (addBtn && tmpl && tbody && totalForms) {
+    addBtn.addEventListener('click', function () {
+      var idx  = parseInt(totalForms.value, 10);
+      var html = tmpl.innerHTML.replace(/__prefix__/g, String(idx));
+      var tmp  = document.createElement('tbody');
+      tmp.innerHTML = html;
+      var newRow = tmp.firstElementChild;
+      tbody.appendChild(newRow);
+      totalForms.value = String(idx + 1);
+      initRow(newRow);
+      /* auto-fill order */
+      var ordInput = newRow.querySelector('.wf-order');
+      if (ordInput) ordInput.value = String(idx);
+      /* focus first real input */
+      var firstInput = newRow.querySelector('.wf-pin');
+      if (firstInput) firstInput.focus();
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.wf-row').forEach(initRow);
+  });
+})();
+</script>
+
+{% endblock %}

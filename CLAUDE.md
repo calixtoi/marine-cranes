@@ -42,10 +42,13 @@ marine-cranes-1/
 │   ├── models.py
 │   ├── views.py
 │   ├── urls.py
+│   ├── forms.py                # WireTerminalForm / CableMetaForm / make_wire_formset
 │   ├── admin.py
 │   ├── templates/pfm2100/
 │   │   ├── device_list.html
-│   │   └── device_detail.html
+│   │   ├── device_detail.html
+│   │   ├── edit_cable_wiring.html  # Inline formset editor for wire terminals
+│   │   └── schematic.html          # Interactive JS topology diagram
 │   └── management/commands/
 │       └── load_pfm2100_data.py
 ├── datasheet/              # Source PDFs (not in git LFS — add manually)
@@ -146,12 +149,22 @@ py manage.py load_pfm2100_data --flush
 
 Total: 85 wire terminals across 21 cables.
 
+**Forms (`pfm2100/forms.py`):**
+
+| Form / Factory | Purpose |
+|---------------|---------|
+| `WireTerminalForm` | ModelForm for a single `PFM2100WireTerminal` row (color dropdown, pin, terminal ref, notes) |
+| `make_wire_formset(extra=1)` | Returns a `modelformset_factory` for wire terminals with delete support |
+| `CableMetaForm` | ModelForm for `PFM2100Cable` header fields (cable ID, part number, junction box, etc.) |
+
 **URLs:**
 
 | URL | View |
 |-----|------|
 | `/pfm2100/` | Device registry table |
 | `/pfm2100/device/<pk>/` | Full device detail: specs + cable table + wire/pin/terminal rows |
+| `/pfm2100/cable/<pk>/edit/` | Inline edit — cable metadata + wire terminal formset, saves & redirects to device detail |
+| `/pfm2100/schematic/` | Interactive topology diagram — draggable nodes, click to inspect cable wiring |
 
 ---
 
@@ -161,7 +174,7 @@ All pages share a persistent left sidebar (defined in `pal40/templates/pal40/bas
 
 Sidebar sections:
 - **PAL40** — System Overview, C70, C71
-- **PFM2100** — All Devices + each device by name/part number
+- **PFM2100** — Connector Map, System Schematic, All Devices + each device by name/part number
 
 Active page is highlighted.
 
@@ -211,4 +224,5 @@ u.save()
 - Add PAL40 ↔ PFM2100 device cross-reference (e.g. link B310 Device to Slewing Monitoring Switch W10)
 - Add a junction box view (Terminal 160, 800, 628, 629 … group all pins by terminal)
 - Add search across pins and devices
+- Improve schematic topology (persist node positions, add PAL40 ECU node, cable routing lines)
 - PostgreSQL for production

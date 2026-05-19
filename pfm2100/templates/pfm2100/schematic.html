@@ -1,0 +1,546 @@
+{% extends "pal40/base.html" %}
+{% block title %}PFM2100 System Schematic{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm2100:device_list' %}">PFM2100</a>
+  <span class="sep">/</span>
+  System Schematic
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:14px;">
+  <div>
+    <h1>PFM2100 System Schematic</h1>
+    <div class="ph-sub">Interactive topology — E-Plan 100662894 Rev C &nbsp;·&nbsp; Drag nodes · Click nodes or cables</div>
+  </div>
+  <div class="legend-chips">
+    <span class="lc lc-supply">Supply</span>
+    <span class="lc lc-junction">Junction</span>
+    <span class="lc lc-connector">Connector</span>
+    <span class="lc lc-ecu">ECU</span>
+    <span class="lc lc-sensor">Sensor</span>
+    <span class="lc lc-actuator">Actuator</span>
+    <span class="lc lc-acoustic">Horn</span>
+    <span class="lc lc-lighting">Light</span>
+  </div>
+</div>
+
+<div class="schem-layout">
+
+  <div class="schem-wrap" id="schem-wrap">
+    <svg id="schem-svg" xmlns="http://www.w3.org/2000/svg" style="cursor:grab;width:100%;height:100%;display:block;">
+      <defs>
+        <marker id="arr" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+          <polygon points="0 0,7 2.5,0 5" fill="#6A8AAA" opacity=".9"/>
+        </marker>
+        <marker id="arr-thick" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+          <polygon points="0 0,7 2.5,0 5" fill="#5A90C8"/>
+        </marker>
+      </defs>
+      <g id="schem-g">
+        <g id="edge-layer"></g>
+        <g id="node-layer"></g>
+      </g>
+    </svg>
+    <div class="schem-btns">
+      <button class="scb" id="btn-in"  title="Zoom in">+</button>
+      <button class="scb" id="btn-out" title="Zoom out">−</button>
+      <button class="scb" id="btn-fit" title="Reset view">⊡</button>
+    </div>
+    <div class="schem-hint">Drag nodes to rearrange · Scroll to zoom · Drag background to pan</div>
+  </div>
+
+  <div class="dp" id="dp">
+    <div class="dp-idle">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".3">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+        <circle cx="12" cy="16" r="1" fill="currentColor"/>
+      </svg>
+      <p>Click a node or cable</p>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.schem-layout { display:flex; gap:14px; align-items:flex-start; }
+.schem-wrap {
+  flex:1; min-width:0; position:relative;
+  background:#0C1117; border:1px solid var(--pal-border);
+  border-radius:var(--radius); overflow:hidden;
+  height:72vh; min-height:500px;
+}
+.schem-btns {
+  position:absolute; bottom:12px; right:12px;
+  display:flex; flex-direction:column; gap:4px;
+}
+.scb {
+  width:30px; height:30px; background:rgba(28,58,92,.85);
+  border:1px solid var(--pal-border); border-radius:var(--radius);
+  color:#BDD4F0; font-size:14px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:background .12s;
+}
+.scb:hover { background:var(--pal-orange); color:white; }
+.schem-hint {
+  position:absolute; bottom:12px; left:12px;
+  font-size:.68rem; color:rgba(180,200,220,.45); pointer-events:none;
+}
+/* Detail panel */
+.dp {
+  width:274px; flex-shrink:0; background:var(--pal-surface);
+  border:1px solid var(--pal-border); border-radius:var(--radius);
+  padding:14px; font-size:.82rem; max-height:72vh; overflow-y:auto;
+}
+.dp-idle { display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 0;color:var(--pal-gray-500);font-size:.78rem;text-align:center; }
+.dp-title { font-size:1.05rem;font-weight:800;color:var(--pal-navy);margin-bottom:2px; }
+.dp-sub   { font-size:.76rem;color:var(--pal-gray-500);margin-bottom:8px; }
+.dp-badge { display:inline-block;padding:2px 8px;border-radius:3px;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px; }
+.dp-kv    { display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--pal-border);font-size:.77rem; }
+.dp-kv span  { color:var(--pal-gray-500); }
+.dp-kv code  { font-size:.73rem; }
+.dp-kv a     { color:var(--pal-orange);text-decoration:none;font-weight:600; }
+.dp-kv a:hover { text-decoration:underline; }
+.dp-sec  { font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--pal-gray-500);margin:10px 0 4px; }
+.dp-wire-tbl { width:100%;border-collapse:collapse;font-size:.75rem; }
+.dp-wire-tbl th { background:var(--pal-gray-100);color:var(--pal-gray-500);font-size:.64rem;text-transform:uppercase;padding:4px 6px;border-bottom:1px solid var(--pal-border);text-align:left; }
+.dp-wire-tbl td { padding:4px 6px;border-bottom:1px solid var(--pal-border);vertical-align:middle; }
+.dp-wire-tbl tr:last-child td { border-bottom:none; }
+.wire-dot-sm { display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid rgba(255,255,255,.15);margin-right:4px;vertical-align:middle; }
+.dp-dev-link { display:block;margin-top:10px;text-align:center;padding:8px;background:var(--pal-navy);color:white;border-radius:var(--radius);font-size:.77rem;font-weight:700;text-decoration:none; }
+.dp-dev-link:hover { background:var(--pal-orange);text-decoration:none; }
+/* Legend */
+.legend-chips { display:flex;flex-wrap:wrap;gap:4px;align-items:center; }
+.lc { padding:3px 8px;border-radius:3px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;border:1px solid transparent; }
+.lc-supply    { background:#16365A;color:#A0C4F8;border-color:#3A7BC8; }
+.lc-junction  { background:#1C3A5C;color:#BDD4F0;border-color:#4A80B8; }
+.lc-connector { background:#1A3A5C;color:#FFB899;border-color:#F05A28; }
+.lc-ecu       { background:#0F2740;color:#FFD0B0;border-color:#F05A28; }
+.lc-sensor    { background:#142D1C;color:#90E4A8;border-color:#2EA85A; }
+.lc-actuator  { background:#3D2010;color:#FFB855;border-color:#D06418; }
+.lc-acoustic  { background:#2E1430;color:#D890F8;border-color:#A030A0; }
+.lc-lighting  { background:#3A3200;color:#FFE880;border-color:#C8A000; }
+@media (max-width:768px) {
+  .schem-layout { flex-direction:column; }
+  .dp { width:100%;max-height:280px; }
+}
+</style>
+
+<script>
+(function(){
+'use strict';
+
+/* ── Data from Django ── */
+const DB = {{ device_data_json|safe }};
+
+const WIRE_HEX = {
+  'BN':'#8D4E2A','BK':'#222','BU':'#1A6FA8','WH':'#D8DCE0',
+  'GN':'#1E9455','YE':'#E8B800','RD':'#B03020','GY':'#6E7880',
+  'VT':'#7133A0','PK':'#C8186A','OG':'#D06418',
+  'GN/YE':'#1E9455','BU/RD':'#1A6FA8','GY/PK':'#6E7880'
+};
+
+const TS = {
+  supply:    {fill:'#16365A',stroke:'#3A7BC8',text:'#A0C4F8'},
+  junction:  {fill:'#1C3A5C',stroke:'#4A80B8',text:'#C8DCEF'},
+  connector: {fill:'#1A3A5C',stroke:'#F05A28',text:'#FFB899'},
+  ecu:       {fill:'#0F2740',stroke:'#F05A28',text:'#FFD0B0'},
+  sensor:    {fill:'#142D1C',stroke:'#2EA85A',text:'#90E4A8'},
+  actuator:  {fill:'#3D2010',stroke:'#D06418',text:'#FFB855'},
+  acoustic:  {fill:'#2E1430',stroke:'#A030A0',text:'#D890F8'},
+  lighting:  {fill:'#3A3200',stroke:'#C8A000',text:'#FFE880'},
+};
+
+const NW=90,NH=48,SW=78,SH=38;
+
+const NODES = [
+  {id:'xx1',  label:'XX1',   sub:'Main Switch',     x:80,   y:460, t:'supply',   w:NW,h:NH},
+  {id:'xx2',  label:'XX2',   sub:'Junction Box',    x:280,  y:460, t:'junction', w:NW,h:NH,loc:'+KS'},
+  {id:'sru1', label:'SRU1',  sub:'Slip Ring Unit',  x:480,  y:460, t:'junction', w:NW,h:NH,loc:'+KS'},
+  {id:'xx3',  label:'XX3',   sub:'Junction Box',    x:760,  y:460, t:'junction', w:NW,h:NH,loc:'+SS'},
+  {id:'xx4',  label:'XX4',   sub:'Junction Box',    x:1210, y:460, t:'junction', w:NW,h:NH,loc:'+KA'},
+  {id:'c70',  label:'C70',   sub:'Molex Blue 56p',  x:660,  y:640, t:'connector',w:NW,h:NH},
+  {id:'c71',  label:'C71',   sub:'Molex Grey 56p',  x:860,  y:640, t:'connector',w:NW,h:NH},
+  {id:'pal40',label:'PAL40', sub:'ECU',             x:760,  y:810, t:'ecu',      w:100,h:52},
+  {id:'x106', label:'X106',  sub:'COI Control Box', x:480,  y:270, t:'junction', w:104,h:NH,loc:'+SS'},
+  // Hydraulic valves
+  {id:'y310', label:'Y310',  sub:'Slewing',         x:190,  y:90,  t:'actuator', w:SW,h:SH,cable:'W50'},
+  {id:'y312', label:'Y312',  sub:'Mainboom',        x:295,  y:90,  t:'actuator', w:SW,h:SH,cable:'W52'},
+  {id:'y314', label:'Y314',  sub:'Knuckleboom',     x:400,  y:90,  t:'actuator', w:SW,h:SH,cable:'W54'},
+  {id:'y316', label:'Y316',  sub:'Extensions',      x:505,  y:90,  t:'actuator', w:SW,h:SH,cable:'W56'},
+  {id:'y318', label:'Y318',  sub:'Winch',           x:610,  y:90,  t:'actuator', w:SW,h:SH,cable:'W58'},
+  {id:'y320', label:'Y320',  sub:'Add. Func.',      x:715,  y:90,  t:'actuator', w:SW,h:SH,cable:'W60'},
+  {id:'y322', label:'Y322',  sub:'Add. Func.',      x:820,  y:90,  t:'actuator', w:SW,h:SH,cable:'W62'},
+  // CAN sensors
+  {id:'u205', label:'U205',  sub:'Slewing Encoder', x:610,  y:320, t:'sensor',   w:SW,h:SH,cable:'W205'},
+  {id:'u206', label:'U206',  sub:'MB Angle Sensor', x:700,  y:255, t:'sensor',   w:SW,h:SH,cable:'W206'},
+  {id:'u900', label:'U900',  sub:'Telematic Unit',  x:880,  y:320, t:'sensor',   w:SW,h:SH,cable:'W900'},
+  // C70 devices
+  {id:'y0',   label:'Y0',    sub:'Em.Stop Valve',   x:410,  y:580, t:'actuator', w:SW,h:SH,cable:'W0'},
+  {id:'h5',   label:'H5',    sub:'Overload Horn',   x:410,  y:665, t:'acoustic', w:SW,h:SH,cable:'W5'},
+  {id:'b310', label:'B310',  sub:'Slewing Switch',  x:465,  y:750, t:'sensor',   w:SW,h:SH,cable:'W310'},
+  {id:'b312', label:'B312',  sub:'Mainboom Switch', x:515,  y:835, t:'sensor',   w:SW,h:SH,cable:'W312'},
+  {id:'b314', label:'B314',  sub:'Knuckle Switch',  x:565,  y:918, t:'sensor',   w:SW,h:SH,cable:'W314'},
+  {id:'u409', label:'U409',  sub:'Press. Piston',   x:665,  y:835, t:'sensor',   w:SW,h:SH,cable:'W409'},
+  {id:'u411', label:'U411',  sub:'Press. Rod',      x:715,  y:918, t:'sensor',   w:SW,h:SH,cable:'W411'},
+  // C71 devices
+  {id:'h6',   label:'H6',    sub:'Warning Horn',    x:990,  y:580, t:'acoustic', w:SW,h:SH,cable:'W6'},
+  {id:'b316', label:'B316',  sub:'Extensions Sw.',  x:1035, y:665, t:'sensor',   w:SW,h:SH,cable:'W316'},
+  {id:'b318', label:'B318',  sub:'Winch Switch',    x:1080, y:750, t:'sensor',   w:SW,h:SH,cable:'W318'},
+  // XX4 devices
+  {id:'h170', label:'H170',  sub:'Floodlight 1',    x:1120, y:580, t:'lighting', w:SW,h:SH,cable:'W170'},
+  {id:'h171', label:'H171',  sub:'Floodlight 2',    x:1260, y:580, t:'lighting', w:SW,h:SH,cable:'W171'},
+  {id:'h172', label:'H172',  sub:'Working Light',   x:1190, y:665, t:'lighting', w:SW,h:SH,cable:'W172'},
+  {id:'b4',   label:'B4',    sub:'Winch OL Switch', x:1120, y:750, t:'sensor',   w:SW,h:SH,cable:'W9'},
+  {id:'y190', label:'Y190',  sub:'ROU Valve',       x:1260, y:750, t:'actuator', w:SW,h:SH,cable:'W190'},
+  {id:'u207', label:'U207',  sub:'KB Angle Sensor', x:1190, y:840, t:'sensor',   w:SW,h:SH,cable:'W207'},
+];
+
+const EDGES = [
+  {f:'xx1', t:'xx2',  lbl:'W1.1/W1.2',cl:'#3A6EA8',w:2.5},
+  {f:'xx2', t:'sru1', lbl:'W2.1/W2.2',cl:'#3A6EA8',w:2.5},
+  {f:'sru1',t:'xx3',  lbl:'W4.1/W4.2',cl:'#3A6EA8',w:2.5},
+  {f:'xx3', t:'xx4',  lbl:'W25/W26',  cl:'#3A6EA8',w:2.5},
+  {f:'xx2', t:'x106', lbl:'W24',      cl:'#5A7A9A',w:1.5},
+  {f:'x106',t:'y310', lbl:'W50',      cl:'#C06010',w:1.2},
+  {f:'x106',t:'y312', lbl:'W52',      cl:'#C06010',w:1.2},
+  {f:'x106',t:'y314', lbl:'W54',      cl:'#C06010',w:1.2},
+  {f:'x106',t:'y316', lbl:'W56',      cl:'#C06010',w:1.2},
+  {f:'x106',t:'y318', lbl:'W58',      cl:'#C06010',w:1.2},
+  {f:'x106',t:'y320', lbl:'W60',      cl:'#C06010',w:1.2},
+  {f:'x106',t:'y322', lbl:'W62',      cl:'#C06010',w:1.2},
+  {f:'xx3', t:'c70',  lbl:'W70 9m',   cl:'#1A6FA8',w:3},
+  {f:'xx3', t:'c71',  lbl:'W71 2.4m', cl:'#6E7880',w:3},
+  {f:'c70', t:'pal40',lbl:'',         cl:'#1A6FA8',w:2},
+  {f:'c71', t:'pal40',lbl:'',         cl:'#6E7880',w:2},
+  {f:'xx3', t:'u205', lbl:'W205',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'u206', lbl:'W206',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'u900', lbl:'W900',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'y0',   lbl:'W0',       cl:'#D06418',w:1.5},
+  {f:'xx3', t:'h5',   lbl:'W5',       cl:'#A030A0',w:1.5},
+  {f:'xx3', t:'b310', lbl:'W310',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'b312', lbl:'W312',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'b314', lbl:'W314',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'u409', lbl:'W409',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'u411', lbl:'W411',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'h6',   lbl:'W6',       cl:'#A030A0',w:1.5},
+  {f:'xx3', t:'b316', lbl:'W316',     cl:'#2EA85A',w:1.5},
+  {f:'xx3', t:'b318', lbl:'W318',     cl:'#2EA85A',w:1.5},
+  {f:'xx4', t:'h170', lbl:'W170',     cl:'#C8A000',w:1.5},
+  {f:'xx4', t:'h171', lbl:'W171',     cl:'#C8A000',w:1.5},
+  {f:'xx4', t:'h172', lbl:'W172',     cl:'#C8A000',w:1.5},
+  {f:'xx4', t:'b4',   lbl:'W9',       cl:'#2EA85A',w:1.5},
+  {f:'xx4', t:'y190', lbl:'W190',     cl:'#D06418',w:1.5},
+  {f:'xx4', t:'u207', lbl:'W207',     cl:'#2EA85A',w:1.5},
+];
+
+/* ── Helpers ── */
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs||{})) e.setAttribute(k,v);
+  return e;
+}
+function nodeById(id) { return NODES.find(n=>n.id===id); }
+
+/* ── Path calculation ── */
+function calcPath(src, dst) {
+  const x1=src.x, y1=src.y, x2=dst.x, y2=dst.y;
+  const dy=Math.abs(y2-y1);
+  let d;
+  if (dy<6) {
+    d=`M ${x1} ${y1} L ${x2} ${y2}`;
+  } else {
+    const cp=Math.max(60,Math.min(Math.abs(x2-x1)*0.5,160));
+    d=`M ${x1} ${y1} C ${x1} ${y1+cp},${x2} ${y2-cp},${x2} ${y2}`;
+  }
+  return {d, mx:(x1+x2)/2, my:(y1+y2)/2};
+}
+
+/* ── DOM caches ── */
+const nodeEls = {}; // id -> {g,rect,t1,t2}
+const edgeEls = {}; // index -> {path,hit,bg,lbl}
+
+/* ── Selection state ── */
+let selNode=null, selEdge=null;
+
+function clearSelection() {
+  if (selNode) { nodeEls[selNode]?.rect.setAttribute('stroke-width','1.5'); selNode=null; }
+  if (selEdge!==null) { edgeEls[selEdge]?.path.setAttribute('opacity','.7'); edgeEls[selEdge]?.path.setAttribute('stroke-width',edgeEls[selEdge]._w); selEdge=null; }
+}
+
+/* ── Build edges ── */
+function buildEdges(layer) {
+  EDGES.forEach((edge,i) => {
+    const src=nodeById(edge.f), dst=nodeById(edge.t);
+    if (!src||!dst) return;
+    const {d,mx,my}=calcPath(src,dst);
+
+    const path=el('path',{
+      d, stroke:edge.cl||'#4A6A8A',
+      'stroke-width':edge.w||1.5,
+      fill:'none',opacity:'.7',
+      'marker-end':`url(#${edge.w>=2.5?'arr-thick':'arr'})`
+    });
+    path._origW=edge.w||1.5;
+    edgeEls[i]={path,_w:String(edge.w||1.5)};
+
+    // Wide invisible hit area
+    const hit=el('path',{d,stroke:'transparent','stroke-width':'14',fill:'none',cursor:'pointer'});
+    hit.addEventListener('mouseenter',()=>{ path.setAttribute('opacity','1'); });
+    hit.addEventListener('mouseleave',()=>{ if(selEdge!==i) path.setAttribute('opacity','.7'); });
+    hit.addEventListener('click',e=>{ e.stopPropagation(); onEdgeClick(edge,i); });
+
+    layer.appendChild(path);
+    layer.appendChild(hit);
+    edgeEls[i].hit=hit;
+
+    if (edge.lbl) {
+      const bg=el('rect',{x:mx-19,y:my-8,width:38,height:13,rx:2,fill:'#0C1117',opacity:'.9'});
+      const lb=el('text',{
+        x:mx,y:my+1,'text-anchor':'middle',
+        'font-family':'monospace','font-size':'7.5',
+        fill:edge.cl||'#8AACCC','pointer-events':'none'
+      });
+      lb.textContent=edge.lbl;
+      layer.appendChild(bg);
+      layer.appendChild(lb);
+      edgeEls[i].bg=bg;
+      edgeEls[i].lbl=lb;
+    }
+  });
+}
+
+/* ── Refresh edges touching a node ── */
+function refreshEdges(nodeId) {
+  EDGES.forEach((edge,i)=>{
+    if(edge.f!==nodeId&&edge.t!==nodeId) return;
+    const src=nodeById(edge.f),dst=nodeById(edge.t);
+    if(!src||!dst||!edgeEls[i]) return;
+    const {d,mx,my}=calcPath(src,dst);
+    edgeEls[i].path.setAttribute('d',d);
+    edgeEls[i].hit.setAttribute('d',d);
+    if(edgeEls[i].bg){ edgeEls[i].bg.setAttribute('x',mx-19); edgeEls[i].bg.setAttribute('y',my-8); }
+    if(edgeEls[i].lbl){ edgeEls[i].lbl.setAttribute('x',mx); edgeEls[i].lbl.setAttribute('y',my+1); }
+  });
+}
+
+/* ── Build nodes ── */
+function buildNodes(layer) {
+  NODES.forEach(node=>{
+    const s=TS[node.t]||TS.junction;
+    const w=node.w||NW, h=node.h||NH;
+    const g=el('g',{'class':'n-grp','data-id':node.id,cursor:'move'});
+
+    const rect=el('rect',{
+      x:node.x-w/2,y:node.y-h/2,width:w,height:h,rx:5,
+      fill:s.fill,stroke:s.stroke,'stroke-width':'1.5'
+    });
+    const mainY=node.sub?node.y-5:node.y+1;
+    const t1=el('text',{
+      x:node.x,y:mainY,'text-anchor':'middle','dominant-baseline':'middle',
+      'font-family':"'Segoe UI',Arial,sans-serif",'font-size':'11','font-weight':'700',
+      fill:s.text,'pointer-events':'none'
+    });
+    t1.textContent=node.label;
+    g.appendChild(rect); g.appendChild(t1);
+
+    let t2=null;
+    if(node.sub){
+      t2=el('text',{
+        x:node.x,y:node.y+10,'text-anchor':'middle','dominant-baseline':'middle',
+        'font-family':"'Segoe UI',Arial,sans-serif",'font-size':'7',
+        fill:s.text,opacity:'.75','pointer-events':'none'
+      });
+      t2.textContent=node.sub;
+      g.appendChild(t2);
+    }
+    nodeEls[node.id]={g,rect,t1,t2};
+
+    /* Drag + click */
+    g.addEventListener('mousedown',e=>{
+      e.stopPropagation();
+      _svgRect=svg.getBoundingClientRect();
+      const c=toCanvas(e);
+      _drag={type:'node',node,ox:node.x-c.x,oy:node.y-c.y};
+      _moved=false;
+      svg.style.cursor='grabbing';
+    });
+    g.addEventListener('click',e=>e.stopPropagation()); // prevent background deselect
+
+    layer.appendChild(g);
+  });
+}
+
+/* ── Update node DOM after move ── */
+function moveNodeEl(node){
+  const n=nodeEls[node.id];
+  if(!n)return;
+  const w=node.w||NW,h=node.h||NH;
+  n.rect.setAttribute('x',node.x-w/2);
+  n.rect.setAttribute('y',node.y-h/2);
+  n.t1.setAttribute('x',node.x);
+  n.t1.setAttribute('y',node.sub?node.y-5:node.y+1);
+  if(n.t2){ n.t2.setAttribute('x',node.x); n.t2.setAttribute('y',node.y+10); }
+}
+
+/* ── Canvas coord helper ── */
+let _svgRect, scale=0.72, tx=20, ty=10;
+function toCanvas(e){
+  return {
+    x:(e.clientX-_svgRect.left-tx)/scale,
+    y:(e.clientY-_svgRect.top-ty)/scale
+  };
+}
+function applyT(){
+  document.getElementById('schem-g').setAttribute('transform',`translate(${tx},${ty}) scale(${scale})`);
+}
+
+/* ── Drag/pan state ── */
+let _drag=null, _moved=false;
+const THRESH=5;
+const svg=document.getElementById('schem-svg');
+
+svg.addEventListener('mousedown',e=>{
+  if(e.target.closest('.n-grp'))return;
+  _svgRect=svg.getBoundingClientRect();
+  _drag={type:'pan',sx:e.clientX,sy:e.clientY,stx:tx,sty:ty};
+  _moved=false;
+  svg.style.cursor='grabbing';
+});
+
+window.addEventListener('mousemove',e=>{
+  if(!_drag)return;
+  if(_drag.type==='pan'){
+    const dx=e.clientX-_drag.sx,dy=e.clientY-_drag.sy;
+    if(Math.hypot(dx,dy)>THRESH){_moved=true;}
+    if(_moved){tx=_drag.stx+dx;ty=_drag.sty+dy;applyT();}
+  } else if(_drag.type==='node'){
+    const c=toCanvas(e);
+    const nx=c.x+_drag.ox,ny=c.y+_drag.oy;
+    if(Math.hypot(nx-_drag.node.x,ny-_drag.node.y)>THRESH/scale){_moved=true;}
+    if(_moved){
+      _drag.node.x=nx; _drag.node.y=ny;
+      moveNodeEl(_drag.node);
+      refreshEdges(_drag.node.id);
+    }
+  }
+});
+
+window.addEventListener('mouseup',e=>{
+  if(!_drag)return;
+  if(_drag.type==='node'&&!_moved) onNodeClick(_drag.node);
+  svg.style.cursor='grab';
+  _drag=null;
+});
+
+svg.addEventListener('click',e=>{
+  if(e.target===svg||e.target.id==='schem-g'||e.target.id==='edge-layer'||e.target.id==='node-layer'){
+    clearSelection();
+    resetPanel();
+  }
+});
+
+svg.addEventListener('wheel',e=>{
+  e.preventDefault();
+  _svgRect=svg.getBoundingClientRect();
+  const mx=e.clientX-_svgRect.left,my=e.clientY-_svgRect.top;
+  const f=e.deltaY<0?1.12:0.89;
+  tx=mx-f*(mx-tx);ty=my-f*(my-ty);scale*=f;applyT();
+},{passive:false});
+
+document.getElementById('btn-in').addEventListener('click',()=>{scale*=1.2;applyT();});
+document.getElementById('btn-out').addEventListener('click',()=>{scale*=0.8;applyT();});
+document.getElementById('btn-fit').addEventListener('click',()=>{scale=0.72;tx=20;ty=10;applyT();});
+
+/* ── Detail panel ── */
+function resetPanel(){
+  document.getElementById('dp').innerHTML=
+    `<div class="dp-idle"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg><p>Click a node or cable</p></div>`;
+}
+
+function wiringTable(wires){
+  if(!wires||!wires.length)return'';
+  let h=`<div class="dp-sec">Wiring</div><table class="dp-wire-tbl"><tr><th>Pin</th><th>Color</th><th>Terminal</th></tr>`;
+  wires.forEach(w=>{
+    const hex=WIRE_HEX[w.color]||'#888';
+    h+=`<tr><td><b>${w.pin||'—'}</b></td><td><span class="wire-dot-sm" style="background:${hex};"></span>${w.color}</td><td><code style="font-size:.7rem;">${w.terminal||'—'}</code></td></tr>`;
+  });
+  return h+`</table>`;
+}
+
+function onNodeClick(node){
+  clearSelection();
+  selNode=node.id;
+  nodeEls[node.id].rect.setAttribute('stroke-width','3');
+  const db=node.cable?DB[node.cable]:null;
+  const s=TS[node.t]||TS.junction;
+  const tl=node.t.charAt(0).toUpperCase()+node.t.slice(1);
+  let h=`<div class="dp-title">${node.label}</div>`;
+  h+=`<div class="dp-sub">${node.sub||''}</div>`;
+  h+=`<span class="dp-badge" style="background:${s.fill};color:${s.text};border:1px solid ${s.stroke};">${tl}</span>`;
+  if(node.loc) h+=kv('Location',`<code>${node.loc}</code>`);
+  if(node.cable) h+=kv('Cable',`<code>${node.cable}</code>`);
+  if(db){
+    h+=kv('Device',db.description);
+    if(db.part_number&&db.part_number!=='_') h+=kv('Part No.',`<code>${db.part_number}</code>`);
+    if(db.junction_box) h+=kv('Junction Box',`<code>${db.junction_box}</code>`);
+    if(db.connection) h+=kv('Connection',db.connection);
+    h+=wiringTable(db.wires);
+    h+=`<a href="/pfm2100/device/${db.device_pk}/" class="dp-dev-link">Open Device Page →</a>`;
+  } else {
+    const ef=EDGES.filter(e=>e.f===node.id&&e.lbl);
+    const et=EDGES.filter(e=>e.t===node.id&&e.lbl);
+    if(ef.length){h+=`<div class="dp-sec">Outgoing cables</div>`;ef.forEach(e=>h+=kv(e.lbl,`→ ${nodeById(e.t)?.label||''}`,e.cl));}
+    if(et.length){h+=`<div class="dp-sec">Incoming cables</div>`;et.forEach(e=>h+=kv(e.lbl,`← ${nodeById(e.f)?.label||''}`,e.cl));}
+  }
+  document.getElementById('dp').innerHTML=h;
+}
+
+function onEdgeClick(edge,idx){
+  clearSelection();
+  selEdge=idx;
+  edgeEls[idx].path.setAttribute('opacity','1');
+  edgeEls[idx].path.setAttribute('stroke-width',String((edge.w||1.5)+1.5));
+
+  const src=nodeById(edge.f),dst=nodeById(edge.t);
+  const cableId=edge.lbl?edge.lbl.split(' ')[0]:'';
+  const db=cableId?DB[cableId]:null;
+
+  let h=`<div class="dp-title">${edge.lbl||'Connection'}</div>`;
+  h+=`<div class="dp-sub">${src?.label||''} &rarr; ${dst?.label||''}</div>`;
+  if(db){
+    h+=kv('Device',db.description);
+    if(db.part_number&&db.part_number!=='_') h+=kv('Part No.',`<code>${db.part_number}</code>`);
+    if(db.junction_box) h+=kv('Junction Box',`<code>${db.junction_box}</code>`);
+    if(db.connection)   h+=kv('Connection',db.connection);
+    h+=wiringTable(db.wires);
+    h+=`<a href="/pfm2100/device/${db.device_pk}/" class="dp-dev-link">Open Device Page →</a>`;
+  } else {
+    h+=`<div style="color:var(--pal-gray-500);font-size:.76rem;margin-top:8px;">Bus / power cable — connects multiple devices.</div>`;
+    if(src) h+=kv('From',src.label+' '+( src.sub||''));
+    if(dst) h+=kv('To',dst.label+' '+(dst.sub||''));
+  }
+  document.getElementById('dp').innerHTML=h;
+}
+
+function kv(label,val,color){
+  return `<div class="dp-kv"><span>${label}</span><span style="${color?'color:'+color+';font-family:monospace;':''}">${val}</span></div>`;
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  _svgRect=svg.getBoundingClientRect();
+  buildEdges(document.getElementById('edge-layer'));
+  buildNodes(document.getElementById('node-layer'));
+  applyT();
+});
+})();
+</script>
+
+{% endblock %}
