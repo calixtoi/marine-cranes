@@ -13,7 +13,7 @@
 
 {% block content %}
 
-<!-- Page header with edit link -->
+<!-- Page header -->
 <div class="page-header">
   <div>
     {% if device.part_number and device.part_number != '_' %}
@@ -23,10 +23,7 @@
     <div class="ph-sub">{{ device.classification }}</div>
   </div>
   <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}"
-     style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
-            background:var(--pal-gray-100);border:1px solid var(--pal-border);border-radius:var(--radius);
-            font-size:.78rem;font-weight:600;color:var(--pal-navy);text-decoration:none;white-space:nowrap;transition:background .12s;"
-     title="Edit in Admin">
+     class="edit-btn" title="Edit in Admin">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -35,11 +32,10 @@
   </a>
 </div>
 
-<!-- Top row: specs + photo -->
-<div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start;">
+<!-- Top row: specs + photo/datasheet -->
+<div class="top-row">
 
-  <!-- Device specifications -->
-  <div class="card card-accent" style="margin-bottom:0;">
+  <div class="card card-accent" style="margin-bottom:0;flex:1;">
     <div class="card-header"><h2>Device Specifications</h2></div>
     <table class="spec-table">
       <tbody>
@@ -68,95 +64,64 @@
         <tr><td>Details</td><td style="white-space:pre-wrap;font-size:.83rem;">{{ device.details }}</td></tr>
         {% endif %}
         {% if device.classification_notes %}
-        <tr><td>Classification Notes</td><td style="font-size:.83rem;">{{ device.classification_notes }}</td></tr>
+        <tr><td>Class. Notes</td><td style="font-size:.83rem;">{{ device.classification_notes }}</td></tr>
         {% endif %}
-        <tr>
-          <td>Connector Type</td>
-          <td><code>{% if device.connector_type and device.connector_type != '_' %}{{ device.connector_type }}{% else %}—{% endif %}</code></td>
-        </tr>
-        <tr>
-          <td>Connector Part No.</td>
-          <td><code>{% if device.connector_part_number and device.connector_part_number != '_' %}{{ device.connector_part_number }}{% else %}—{% endif %}</code></td>
-        </tr>
+        <tr><td>Connector Type</td><td><code>{% if device.connector_type and device.connector_type != '_' %}{{ device.connector_type }}{% else %}—{% endif %}</code></td></tr>
+        <tr><td>Connector Part No.</td><td><code>{% if device.connector_part_number and device.connector_part_number != '_' %}{{ device.connector_part_number }}{% else %}—{% endif %}</code></td></tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Device photo -->
-  <div style="display:flex;flex-direction:column;gap:16px;min-width:220px;max-width:280px;">
-    <div class="card" style="margin-bottom:0;padding:16px;">
+  <div class="side-panel">
+    <!-- Photo -->
+    <div class="card" style="margin-bottom:12px;padding:16px;">
       <div class="card-header" style="margin-bottom:12px;"><h2>Device Photo</h2></div>
       {% if device.image %}
         <img src="{{ device.image.url }}" alt="{{ device.description }}"
              style="width:100%;border-radius:var(--radius);border:1px solid var(--pal-border);display:block;">
       {% else %}
-        <div style="width:100%;aspect-ratio:1/1;background:var(--pal-gray-100);border:2px dashed var(--pal-border);
-                    border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;
-                    justify-content:center;gap:8px;color:var(--pal-gray-500);text-align:center;padding:20px;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4">
+        <div class="photo-placeholder">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".35">
             <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
             <polyline points="21 15 16 10 5 21"/>
           </svg>
-          <span style="font-size:.75rem;">No photo uploaded</span>
+          <span>No photo</span>
         </div>
-        <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}"
-           style="display:block;text-align:center;margin-top:10px;font-size:.75rem;color:var(--pal-orange);">
-          + Upload photo
-        </a>
+        <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}" class="add-link">+ Upload photo</a>
       {% endif %}
     </div>
 
     <!-- Datasheet -->
-    <div class="card" style="margin-bottom:0;padding:16px;">
+    <div class="card" style="padding:16px;">
       <div class="card-header" style="margin-bottom:12px;"><h2>Datasheet</h2></div>
       {% if device.datasheet %}
-        <a href="{{ device.datasheet.url }}" target="_blank" rel="noopener"
-           style="display:flex;align-items:center;gap:8px;padding:10px 14px;
-                  background:var(--pal-navy);color:white;border-radius:var(--radius);
-                  text-decoration:none;font-size:.8rem;font-weight:600;transition:background .12s;"
-           onmouseover="this.style.background='var(--pal-orange)'"
-           onmouseout="this.style.background='var(--pal-navy)'">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
+        <a href="{{ device.datasheet.url }}" target="_blank" rel="noopener" class="dl-btn dl-btn-navy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download PDF
         </a>
       {% endif %}
       {% if device.datasheet_url %}
-        <a href="{{ device.datasheet_url }}" target="_blank" rel="noopener"
-           style="display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:8px;
-                  background:var(--pal-gray-100);border:1px solid var(--pal-border);color:var(--pal-navy);
-                  border-radius:var(--radius);text-decoration:none;font-size:.8rem;font-weight:600;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
+        <a href="{{ device.datasheet_url }}" target="_blank" rel="noopener" class="dl-btn dl-btn-outline" style="margin-top:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           External Datasheet
         </a>
       {% endif %}
       {% if not device.datasheet and not device.datasheet_url %}
-        <div style="text-align:center;color:var(--pal-gray-500);font-size:.78rem;padding:12px 0;">
-          No datasheet attached
-        </div>
-        <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}"
-           style="display:block;text-align:center;font-size:.75rem;color:var(--pal-orange);">
-          + Add datasheet
-        </a>
+        <div style="text-align:center;color:var(--pal-gray-500);font-size:.78rem;padding:10px 0;">No datasheet attached</div>
+        <a href="{% url 'admin:pfm2100_pfm2100device_change' device.pk %}" class="add-link">+ Add datasheet</a>
       {% endif %}
     </div>
   </div>
 
-</div><!-- /top row -->
+</div>
 
-<!-- Cable & wiring tables -->
+<!-- ── Cable sections ── -->
 {% for cable in device.cables.all %}
-<div class="card" style="margin-top:20px;">
+<div class="card cable-card">
   <div class="card-header">
-    <h2>
-      Cable&nbsp;
-      <code style="font-family:monospace;background:var(--pal-gray-100);padding:2px 8px;border-radius:2px;font-size:.88rem;">{{ cable.cable_id }}</code>
+    <h2>Cable&nbsp;<code class="cable-code">{{ cable.cable_id }}</code>
       {% if cable.cable_part_number and cable.cable_part_number != '_' %}
-        <span style="color:var(--pal-gray-500);font-size:.78rem;font-weight:400;margin-left:8px;">Part: {{ cable.cable_part_number }}</span>
+        <span class="cable-pn">Part: {{ cable.cable_part_number }}</span>
       {% endif %}
     </h2>
     {% if cable.connection_details %}
@@ -165,46 +130,51 @@
   </div>
 
   {% if cable.junction_box_ref %}
-  <div class="info-box" style="margin-bottom:14px;">
-    Junction Box reference: <strong>{{ cable.junction_box_ref }}</strong>
-  </div>
+  <div class="info-box" style="margin-bottom:14px;">Junction Box: <strong>{{ cable.junction_box_ref }}</strong></div>
   {% endif %}
-
   {% if cable.notes %}
-  <div class="warn-box" style="font-size:.82rem;white-space:pre-wrap;">{{ cable.notes }}</div>
+  <div class="warn-box" style="font-size:.82rem;white-space:pre-wrap;margin-bottom:14px;">{{ cable.notes }}</div>
   {% endif %}
 
   {% if cable.wires.all %}
 
-  <!-- Connector diagram + wire table side by side -->
-  <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;">
+  <!-- ── Visual: connector face + wiring scheme ── -->
+  <div class="wiring-visual">
 
-    <!-- Pin diagram -->
-    <div>
-      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--pal-gray-500);margin-bottom:8px;text-align:center;">
-        Connector Face
-      </div>
-      <div class="connector-diagram"
-           data-connector="{{ device.connector_type }}"
-           data-wires='[{% for wire in cable.wires.all %}{"pin":"{{ wire.device_pin|escapejs }}","color":"{{ wire.wire_color|escapejs }}","terminal":"{{ wire.terminal_ref|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'
-           style="width:170px;height:170px;flex-shrink:0;">
+    <!-- Connector face -->
+    <div class="face-wrap">
+      <div class="diag-label">Connector Face View</div>
+      <div class="connector-face"
+           data-idx="{{ forloop.counter }}"
+           data-conn="{{ device.connector_type|escapejs }}"
+           data-wires='[{% for w in cable.wires.all %}{"pin":"{{ w.device_pin|escapejs }}","color":"{{ w.wire_color|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
       </div>
       {% if device.connector_type and device.connector_type != '_' %}
-      <div style="text-align:center;font-size:.7rem;color:var(--pal-gray-500);margin-top:6px;">
-        {{ device.connector_type }}
-      </div>
+      <div class="conn-type-lbl">{{ device.connector_type }}</div>
       {% endif %}
     </div>
 
-    <!-- Wire table -->
-    <table class="wire-table">
+    <!-- Wiring scheme -->
+    <div class="scheme-wrap">
+      <div class="diag-label">Wiring Diagram</div>
+      <div class="wiring-scheme"
+           data-wires='[{% for w in cable.wires.all %}{"pin":"{{ w.device_pin|escapejs }}","color":"{{ w.wire_color|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Wire detail table ── -->
+  <details class="wire-details">
+    <summary>Wire Detail Table ({{ cable.wires.all|length }} wires)</summary>
+    <table class="wire-tbl">
       <thead>
         <tr>
-          <th style="width:36px;">#</th>
-          <th style="width:130px;">Wire / Color</th>
-          <th style="width:110px;">Pin (Device)</th>
+          <th style="width:32px;">#</th>
+          <th style="width:120px;">Wire / Color</th>
+          <th style="width:100px;">Pin (Device)</th>
           <th>Terminal / Connection</th>
-          <th style="width:180px;">Notes</th>
+          <th>Notes</th>
         </tr>
       </thead>
       <tbody>
@@ -215,145 +185,315 @@
             <span class="wire-swatch" data-color="{{ wire.wire_color }}"></span>
             <code style="font-size:.8rem;">{{ wire.wire_color }}</code>
           </td>
-          <td>
-            {% if wire.device_pin %}
-              <span class="pin-badge">{{ wire.device_pin }}</span>
-            {% else %}
-              <span style="color:var(--pal-gray-300);">—</span>
-            {% endif %}
-          </td>
+          <td><span class="pin-badge">{{ wire.device_pin|default:"—" }}</span></td>
           <td style="font-size:.83rem;">{{ wire.terminal_ref|default:"—" }}</td>
           <td style="font-size:.78rem;color:var(--pal-gray-500);">{{ wire.notes }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+  </details>
 
-  </div><!-- /diagram+table grid -->
   {% endif %}
 </div>
 {% endfor %}
 
 <style>
-/* Wire table */
-.wire-table { width:100%; border-collapse:collapse; font-size:.83rem; }
-.wire-table thead th {
-  background: var(--pal-navy); color: var(--pal-white);
-  padding: 9px 12px; font-size:.7rem; font-weight:600;
-  text-transform:uppercase; letter-spacing:.5px; text-align:left;
-}
-.wire-table thead th:first-child { border-radius: var(--radius) 0 0 0; }
-.wire-table thead th:last-child  { border-radius: 0 var(--radius) 0 0; }
-.wire-table tbody td { padding: 8px 12px; border-bottom:1px solid var(--pal-border); vertical-align:middle; }
-.wire-table tbody tr:hover td { background: var(--pal-orange-light); }
+/* Page layout */
+.top-row { display:flex; gap:20px; align-items:flex-start; margin-bottom:20px; }
+.side-panel { display:flex; flex-direction:column; min-width:210px; max-width:260px; }
 
-/* Pin badge in wire table */
+/* Edit button */
+.edit-btn {
+  margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); font-size:.78rem; font-weight:600; color:var(--pal-navy);
+  text-decoration:none; white-space:nowrap; transition:background .12s;
+}
+.edit-btn:hover { background:var(--pal-orange-light); color:var(--pal-orange); text-decoration:none; }
+
+/* Photo placeholder */
+.photo-placeholder {
+  width:100%; aspect-ratio:4/3; background:var(--pal-gray-100);
+  border:2px dashed var(--pal-border); border-radius:var(--radius);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; color:var(--pal-gray-500); font-size:.75rem; text-align:center; padding:20px;
+}
+.add-link { display:block; text-align:center; margin-top:8px; font-size:.74rem; color:var(--pal-orange); }
+
+/* Download buttons */
+.dl-btn {
+  display:flex; align-items:center; gap:8px; padding:10px 14px;
+  border-radius:var(--radius); text-decoration:none; font-size:.8rem;
+  font-weight:600; transition:background .12s;
+}
+.dl-btn-navy { background:var(--pal-navy); color:white; }
+.dl-btn-navy:hover { background:var(--pal-orange); color:white; text-decoration:none; }
+.dl-btn-outline { background:var(--pal-gray-100); border:1px solid var(--pal-border); color:var(--pal-navy); }
+.dl-btn-outline:hover { border-color:var(--pal-orange); color:var(--pal-orange); text-decoration:none; }
+
+/* Cable card */
+.cable-card { margin-top:20px; }
+.cable-code {
+  font-family:monospace; background:var(--pal-gray-100);
+  padding:2px 8px; border-radius:2px; font-size:.88rem; border:1px solid var(--pal-border);
+}
+.cable-pn { color:var(--pal-gray-500); font-size:.78rem; font-weight:400; margin-left:10px; }
+
+/* Wiring visual row */
+.wiring-visual {
+  display:grid; grid-template-columns:200px 1fr; gap:24px;
+  align-items:start; margin-bottom:16px;
+}
+.face-wrap { display:flex; flex-direction:column; align-items:center; }
+.scheme-wrap { display:flex; flex-direction:column; }
+.diag-label {
+  font-size:.68rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.7px; color:var(--pal-gray-500); margin-bottom:8px;
+}
+.connector-face { width:200px; height:200px; }
+.conn-type-lbl {
+  font-size:.72rem; color:var(--pal-gray-500); margin-top:4px; text-align:center;
+}
+
+/* Wire details collapsible */
+.wire-details summary {
+  font-size:.78rem; font-weight:600; color:var(--pal-navy);
+  cursor:pointer; padding:8px 0; list-style:none; display:flex; align-items:center; gap:6px;
+  border-top:1px solid var(--pal-border); margin-top:4px;
+}
+.wire-details summary::-webkit-details-marker { display:none; }
+.wire-details summary::before {
+  content:'▶'; font-size:.6rem; color:var(--pal-orange); transition:transform .15s;
+}
+.wire-details[open] summary::before { transform:rotate(90deg); }
+.wire-details[open] summary { color:var(--pal-orange); }
+
+/* Wire table */
+.wire-tbl { width:100%; border-collapse:collapse; font-size:.83rem; margin-top:10px; }
+.wire-tbl thead th {
+  background:var(--pal-navy); color:white; padding:8px 12px;
+  font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.4px; text-align:left;
+}
+.wire-tbl thead th:first-child { border-radius:var(--radius) 0 0 0; }
+.wire-tbl thead th:last-child  { border-radius:0 var(--radius) 0 0; }
+.wire-tbl tbody td { padding:7px 12px; border-bottom:1px solid var(--pal-border); vertical-align:middle; }
+.wire-tbl tbody tr:hover td { background:var(--pal-orange-light); }
+
+/* Pin badge */
 .pin-badge {
   display:inline-flex; align-items:center; justify-content:center;
-  min-width:28px; height:24px; padding:0 6px;
+  min-width:26px; height:22px; padding:0 5px;
   background:var(--pal-navy); color:white;
-  border-radius:var(--radius); font-family:monospace;
-  font-size:.75rem; font-weight:700;
+  border-radius:var(--radius); font-family:monospace; font-size:.75rem; font-weight:700;
 }
 
-/* Responsive: stack on small screens */
-@media (max-width: 700px) {
-  [style*="grid-template-columns:auto 1fr"] {
-    grid-template-columns: 1fr !important;
-  }
+@media (max-width:680px) {
+  .top-row { flex-direction:column; }
+  .side-panel { min-width:unset; max-width:unset; width:100%; }
+  .wiring-visual { grid-template-columns:1fr; }
+  .face-wrap { flex-direction:row; gap:16px; align-items:flex-start; }
 }
 </style>
 
 <script>
 (function () {
-  var COLORS = {
-    'BN':'#8D4E2A','BK':'#2C2C2C','BU':'#2980B9','WH':'#E8ECEF',
-    'GN':'#27AE60','YE':'#F1C40F','RD':'#C0392B','GY':'#7F8C8D',
-    'VT':'#8E44AD','PK':'#E91E8C','OG':'#E67E22'
+  /* ── Wire colour palette ── */
+  var HEX = {
+    'BN':'#8D4E2A','BK':'#1E1E1E','BU':'#1A6FA8','WH':'#D8DCE0',
+    'GN':'#1E9455','YE':'#E8B800','RD':'#B03020','GY':'#6E7880',
+    'VT':'#7133A0','PK':'#C8186A','OG':'#D06418'
   };
-  var LIGHT = {'WH':1,'YE':1,'GN/YE':1};
+  /* text contrast on each color */
+  var DARK_TEXT = {'WH':1,'YE':1};
 
-  function fillFor(code) {
-    var c = code.toUpperCase();
-    if (c === 'GN/YE') return 'url(#gnye)';
-    if (c === 'BU/RD') return 'url(#burd)';
-    if (c === 'GY/PK') return 'url(#gypk)';
-    return COLORS[c] || '#444';
+  function fill(code) {
+    var c = code.toUpperCase().replace('/','');
+    if (c==='GNYE') return 'url(#gnye)';
+    if (c==='BURD') return 'url(#burd)';
+    if (c==='GYPK') return 'url(#gypk)';
+    return HEX[code.toUpperCase()] || HEX[c] || '#555';
   }
 
-  function render(el, wires) {
-    var S = 170, cx = S/2, cy = S/2;
-    var bodyR = S * 0.41, innerR = S * 0.345, pinPlaceR = S * 0.23, pinR = S * 0.082;
+  function lineColor(code) {
+    var c = code.toUpperCase().replace('/','');
+    if (c==='GNYE') return '#1E9455';
+    if (c==='BURD') return '#1A6FA8';
+    if (c==='GYPK') return '#6E7880';
+    return HEX[code.toUpperCase()] || HEX[c] || '#888';
+  }
 
-    /* build pin map */
-    var map = {}, maxPin = 0;
-    wires.forEach(function(w) {
+  /* ─────────────────────────────────────────────────
+     CONNECTOR FACE
+     Numbers outside the ring, coloured contacts inside
+  ───────────────────────────────────────────────── */
+  function renderFace(el, wires, idx) {
+    var S = 200, margin = 18;
+    var total = S + margin * 2;
+    var cx = total / 2, cy = total / 2;
+    var bodyR   = S * 0.36;
+    var innerR  = S * 0.29;
+    var pinRing = S * 0.185;  /* pin placement radius */
+    var pinDot  = S * 0.065;  /* pin contact radius   */
+    var numRing = bodyR + margin * 0.90; /* number radius — just outside shell */
+
+    /* build pin→wire map */
+    var map = {}, maxP = 0;
+    wires.forEach(function(w){
       var p = parseInt(w.pin, 10);
-      if (!isNaN(p)) { map[p] = w; if (p > maxPin) maxPin = p; }
+      if (!isNaN(p) && p > 0) { map[p] = w; if (p > maxP) maxP = p; }
     });
-    var n = maxPin || wires.length;
+    var n = maxP || wires.length;
     if (n < 1) return;
 
-    var svg = '<svg width="'+S+'" height="'+S+'" viewBox="0 0 '+S+' '+S+'" xmlns="http://www.w3.org/2000/svg">';
+    var g = 'g' + idx; /* gradient id suffix */
+    var svg = '<svg width="'+total+'" height="'+total+'"'
+      + ' viewBox="0 0 '+total+' '+total+'"'
+      + ' xmlns="http://www.w3.org/2000/svg">';
+
     /* defs */
     svg += '<defs>'
-      + '<radialGradient id="bg'+el.dataset.idx+'"><stop offset="0%" stop-color="#505660"/><stop offset="100%" stop-color="#252830"/></radialGradient>'
-      + '<linearGradient id="gnye"><stop offset="50%" stop-color="#27AE60"/><stop offset="50%" stop-color="#F1C40F"/></linearGradient>'
-      + '<linearGradient id="burd"><stop offset="50%" stop-color="#2980B9"/><stop offset="50%" stop-color="#C0392B"/></linearGradient>'
-      + '<linearGradient id="gypk"><stop offset="50%" stop-color="#7F8C8D"/><stop offset="50%" stop-color="#E91E8C"/></linearGradient>'
-      + '</defs>';
+      +'<radialGradient id="bg'+g+'"><stop offset="0%" stop-color="#4E535E"/><stop offset="100%" stop-color="#1F2228"/></radialGradient>'
+      +'<linearGradient id="gnye'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#1E9455"/><stop offset="50%" stop-color="#E8B800"/></linearGradient>'
+      +'<linearGradient id="burd'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#1A6FA8"/><stop offset="50%" stop-color="#B03020"/></linearGradient>'
+      +'<linearGradient id="gypk'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#6E7880"/><stop offset="50%" stop-color="#C8186A"/></linearGradient>'
+      +'</defs>';
 
-    /* outer shell */
-    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+bodyR+'" fill="#9AA2AE" stroke="#707880" stroke-width="2.5"/>';
-    /* inner body */
-    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="url(#bg'+el.dataset.idx+')"/>';
-    /* key notch */
-    svg += '<rect x="'+(cx-5)+'" y="'+(cy-bodyR-5)+'" width="10" height="9" rx="2" fill="#9AA2AE"/>';
-    /* key label */
-    svg += '<text x="'+cx+'" y="'+(cy-bodyR-1)+'" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="6" fill="#555">▲</text>';
+    /* connector shell */
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+bodyR+'" fill="#8E969E" stroke="#606870" stroke-width="2.5"/>';
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="url(#bg'+g+')"/>';
+    /* key notch at bottom */
+    svg += '<rect x="'+(cx-5)+'" y="'+(cy+bodyR-3)+'" width="10" height="10" rx="2" fill="#8E969E"/>';
 
     /* pins */
     for (var i = 1; i <= n; i++) {
-      var ang = (-90 + (i - 1) * 360 / n) * Math.PI / 180;
-      var px = cx + Math.cos(ang) * pinPlaceR;
-      var py = cy + Math.sin(ang) * pinPlaceR;
-      var w = map[i];
+      var deg = -90 + (i - 1) * 360 / n;
+      var rad = deg * Math.PI / 180;
+      var px = cx + Math.cos(rad) * pinRing;
+      var py = cy + Math.sin(rad) * pinRing;
+      var nx = cx + Math.cos(rad) * numRing;
+      var ny = cy + Math.sin(rad) * numRing;
+      var w  = map[i];
 
       /* pin hole */
-      svg += '<circle cx="'+px+'" cy="'+py+'" r="'+pinR+'" fill="#111" stroke="#3A3F48" stroke-width="1.5"/>';
+      svg += '<circle cx="'+px+'" cy="'+py+'" r="'+pinDot+'"'
+        +' fill="#0A0C0F" stroke="#404550" stroke-width="1.5"/>';
 
+      /* pin contact — wire colour if connected, dark grey otherwise */
       if (w) {
-        var fill = fillFor(w.color);
-        var textFill = LIGHT[w.color.toUpperCase()] ? '#333' : '#FFF';
-        /* colored pin contact */
-        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinR*0.72)+'" fill="'+fill+'" stroke="rgba(0,0,0,.3)" stroke-width="1"/>';
-        /* pin number */
-        svg += '<text x="'+px+'" y="'+py+'" text-anchor="middle" dominant-baseline="middle"'
-          + ' font-family="\'Courier New\',monospace" font-size="'+(pinR*0.92)+'" font-weight="bold" fill="'+textFill+'">'+i+'</text>';
+        var c = w.color.toUpperCase().replace('/','');
+        var f = (c==='GNYE') ? 'url(#gnye'+g+')'
+              : (c==='BURD') ? 'url(#burd'+g+')'
+              : (c==='GYPK') ? 'url(#gypk'+g+')'
+              : (HEX[w.color.toUpperCase()]||HEX[c]||'#555');
+        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinDot*0.68)+'"'
+          +' fill="'+f+'" stroke="rgba(255,255,255,.12)" stroke-width="0.8"/>';
       } else {
-        /* empty pin */
-        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinR*0.55)+'" fill="#2A2D33"/>';
-        svg += '<text x="'+px+'" y="'+py+'" text-anchor="middle" dominant-baseline="middle"'
-          + ' font-family="\'Courier New\',monospace" font-size="'+(pinR*0.8)+'" fill="#555">'+i+'</text>';
+        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinDot*0.50)+'" fill="#2C3038"/>';
       }
+
+      /* pin number — OUTSIDE the connector, navy, good contrast on white */
+      svg += '<text x="'+nx+'" y="'+ny+'"'
+        +' text-anchor="middle" dominant-baseline="middle"'
+        +' font-family="\'Segoe UI\',Arial,sans-serif"'
+        +' font-size="12" font-weight="700" fill="#1C3A5C">'+i+'</text>';
     }
 
-    /* center dot for 5+ pin connectors */
+    /* center indent for ≥5-pin connectors */
     if (n >= 5) {
-      svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(pinR*0.55)+'" fill="#1E2128" stroke="#3A3F48" stroke-width="1"/>';
+      svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(pinDot*0.6)+'"'
+        +' fill="#181A1F" stroke="#383C44" stroke-width="1"/>';
     }
 
     svg += '</svg>';
     el.innerHTML = svg;
   }
 
+  /* ─────────────────────────────────────────────────
+     WIRING SCHEME
+     Horizontal connection diagram:
+     [pin#] ──■COLOR■──────────────── Terminal.Ref
+  ───────────────────────────────────────────────── */
+  function renderScheme(el, wires) {
+    if (!wires.length) return;
+
+    var ROW = 38, PAD = 10;
+    var VW = 460, H = PAD * 2 + wires.length * ROW;
+
+    /* layout x positions */
+    var PIN_CX = 18;
+    var L1 = 36, L2 = 340;   /* wire line start/end */
+    var LABEL_X = L1 + 8;    /* colour label start  */
+    var LABEL_W = 40;
+    var TERM_X  = L2 + 8;    /* terminal text       */
+
+    var svg = '<svg width="100%" height="'+H+'" viewBox="0 0 '+VW+' '+H+'"'
+      +' preserveAspectRatio="xMinYMid meet"'
+      +' xmlns="http://www.w3.org/2000/svg"'
+      +' style="font-family:\'Segoe UI\',Arial,sans-serif;">';
+
+    /* top & bottom border lines */
+    svg += '<line x1="0" y1="0" x2="'+VW+'" y2="0" stroke="#E0E0E0" stroke-width="1"/>';
+    svg += '<line x1="0" y1="'+H+'" x2="'+VW+'" y2="'+H+'" stroke="#E0E0E0" stroke-width="1"/>';
+
+    wires.forEach(function (w, i) {
+      var y = PAD + i * ROW + ROW / 2;
+      var lc = lineColor(w.color);
+
+      /* alternating row tint */
+      if (i % 2 === 0) {
+        svg += '<rect x="0" y="'+(PAD+i*ROW)+'" width="'+VW+'" height="'+ROW+'" fill="#F5F7FA"/>';
+      }
+
+      /* pin circle */
+      svg += '<circle cx="'+PIN_CX+'" cy="'+y+'" r="13" fill="#1C3A5C"/>';
+      svg += '<text x="'+PIN_CX+'" y="'+y+'"'
+        +' text-anchor="middle" dominant-baseline="middle"'
+        +' font-size="9.5" font-weight="700" fill="white">'+(w.pin||'?')+'</text>';
+
+      /* coloured wire line */
+      svg += '<line x1="'+L1+'" y1="'+y+'" x2="'+L2+'" y2="'+y+'"'
+        +' stroke="'+lc+'" stroke-width="5.5" stroke-linecap="round"/>';
+
+      /* white pill label showing colour code */
+      svg += '<rect x="'+LABEL_X+'" y="'+(y-10)+'" width="'+LABEL_W+'" height="20" rx="3"'
+        +' fill="white" stroke="#C8CDD2" stroke-width="0.9"/>';
+      svg += '<text x="'+(LABEL_X+LABEL_W/2)+'" y="'+y+'"'
+        +' text-anchor="middle" dominant-baseline="middle"'
+        +' font-size="8.5" font-weight="800" fill="#222">'+w.color+'</text>';
+
+      /* terminal reference */
+      svg += '<text x="'+TERM_X+'" y="'+y+'"'
+        +' dominant-baseline="middle"'
+        +' font-size="9" font-weight="600" fill="#1C3A5C"'
+        +' font-family="\'Courier New\',monospace">'+(w.terminal||'—')+'</text>';
+
+      /* row separator */
+      if (i < wires.length - 1) {
+        svg += '<line x1="0" y1="'+(PAD+(i+1)*ROW)+'" x2="'+VW+'" y2="'+(PAD+(i+1)*ROW)+'"'
+          +' stroke="#DDE1E7" stroke-width="0.7"/>';
+      }
+    });
+
+    svg += '</svg>';
+    el.innerHTML = svg;
+  }
+
+  /* ── Init ── */
   document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.connector-diagram').forEach(function (el, idx) {
-      el.dataset.idx = idx;
+    document.querySelectorAll('.connector-face').forEach(function (el) {
       try {
         var wires = JSON.parse(el.dataset.wires || '[]');
-        if (wires.length) render(el, wires);
-      } catch(e) {}
+        var idx   = el.dataset.idx || '0';
+        if (wires.length) renderFace(el, wires, idx);
+      } catch (e) { console.warn('face error', e); }
+    });
+
+    document.querySelectorAll('.wiring-scheme').forEach(function (el) {
+      try {
+        var wires = JSON.parse(el.dataset.wires || '[]');
+        if (wires.length) renderScheme(el, wires);
+      } catch (e) { console.warn('scheme error', e); }
     });
   });
 })();
