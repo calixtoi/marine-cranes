@@ -200,6 +200,18 @@
       border-top: 1px solid var(--pal-border);
       margin: 6px 18px;
     }
+    /* Collapsible sidebar group toggle */
+    .sidebar-toggle {
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--font);
+    }
+    .sidebar-toggle:hover { color: var(--pal-orange); }
+    .sidebar-toggle[aria-expanded="true"] .toggle-chevron { transform: rotate(180deg); }
+    .sidebar-toggle[aria-expanded="true"] { color: var(--pal-orange); }
 
     /* ── Main content ─────────────────────────────────────────────────── */
     .main-wrap { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
@@ -498,27 +510,43 @@
 
     <hr class="sidebar-divider">
 
-    <!-- PFM2100 section -->
+    <!-- PFM2100 section (collapsible) -->
     <div class="sidebar-section">
-      <div class="sidebar-section-label">Crane Model</div>
-      <div class="sidebar-group">
+      <div class="sidebar-section-label">Crane Models</div>
+
+      <!-- PFM2100 toggle -->
+      {% with is_pfm_active=request.resolver_match.app_name %}
+      <button class="sidebar-group sidebar-toggle"
+              id="pfm2100-toggle"
+              aria-expanded="{% if is_pfm_active == 'pfm2100' %}true{% else %}false{% endif %}"
+              onclick="toggleSidebarGroup('pfm2100-devices', this)">
         <span class="dot" style="background:var(--pal-navy-mid);"></span>
         PFM2100
+        <svg class="toggle-chevron" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"
+             style="width:12px;height:12px;margin-left:auto;transition:transform .2s;flex-shrink:0;">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div id="pfm2100-devices"
+           style="{% if is_pfm_active != 'pfm2100' %}display:none;{% endif %}">
+        <a href="{% url 'pfm2100:device_list' %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'device_list' %}active{% endif %}">
+          All Devices
+        </a>
+        {% for dev in nav_pfm_devices %}
+        <a href="{% url 'pfm2100:device_detail' dev.pk %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'device_detail' and request.resolver_match.kwargs.pk == dev.pk %}active{% endif %}"
+           title="{{ dev.description }}">
+          {% if dev.part_number and dev.part_number != '_' %}
+            <span class="item-code">{{ dev.part_number }}</span>
+          {% endif %}
+          {{ dev.description|truncatechars:30 }}
+        </a>
+        {% endfor %}
       </div>
-      <a href="{% url 'pfm2100:device_list' %}"
-         class="sidebar-item {% if request.resolver_match.url_name == 'device_list' %}active{% endif %}">
-        All Devices
-      </a>
-      {% for dev in nav_pfm_devices %}
-      <a href="{% url 'pfm2100:device_detail' dev.pk %}"
-         class="sidebar-item {% if request.resolver_match.url_name == 'device_detail' and request.resolver_match.kwargs.pk == dev.pk %}active{% endif %}"
-         title="{{ dev.description }}">
-        {% if dev.part_number and dev.part_number != '_' %}
-          <span class="item-code">{{ dev.part_number }}</span>
-        {% endif %}
-        {{ dev.description|truncatechars:30 }}
-      </a>
-      {% endfor %}
+      {% endwith %}
+
     </div>
   </nav>
 
@@ -534,5 +562,14 @@
   </div>
 
 </div>
+
+<script>
+function toggleSidebarGroup(targetId, btn) {
+  var el = document.getElementById(targetId);
+  var expanded = btn.getAttribute('aria-expanded') === 'true';
+  el.style.display = expanded ? 'none' : '';
+  btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+}
+</script>
 </body>
 </html>

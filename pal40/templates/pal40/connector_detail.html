@@ -19,22 +19,72 @@
   <span class="badge badge-GND" style="margin-left:auto;">56 pins</span>
 </div>
 
+<!-- ── Table 1: Generic PAL40 Pinout ── -->
 <div class="card" style="overflow-x:auto;">
   <div class="card-header">
-    <h2>PAL40 {{ connector.designation }} — {{ connector.color }} Connector</h2>
-    <span class="ch-count">{{ pins|length }} pins</span>
+    <h2>PAL40 Standard Pinout</h2>
+    <span class="ch-count">{{ pins|length }} pins &nbsp;·&nbsp; Generic — all crane types</span>
   </div>
 
   <table class="pin-table">
     <thead>
       <tr>
-        <th style="width:42px;text-align:center;">Pin</th>
+        <th style="width:52px;text-align:center;">Pin</th>
         <th>Function</th>
-        <th style="width:60px;">Cable</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pin in pins %}
+      <tr class="
+        {% if pin.signal_type == 'GND' %}row-gnd
+        {% elif pin.signal_type == 'PWR' %}row-pwr
+        {% elif pin.signal_type == 'CAN' %}row-can
+        {% elif pin.signal_type == 'DI'  %}row-di
+        {% elif pin.signal_type == 'DO'  %}row-do
+        {% elif pin.signal_type == 'AI'  %}row-ai
+        {% endif %}
+        {% if pin.safety_related %}row-safety{% endif %}
+      ">
+        <td style="text-align:center;font-weight:700;font-family:monospace;">
+          <a href="{% url 'pal40:pin_detail' connector.pk pin.pin_number %}">
+            {{ pin.pin_number }}
+          </a>
+        </td>
+        <td>
+          <span class="badge badge-{{ pin.signal_type }}" style="margin-right:6px;vertical-align:middle;">{{ pin.signal_type }}</span>
+          {{ pin.function }}
+          {% if pin.safety_related %}
+            <span class="badge badge-safety" style="margin-left:6px;vertical-align:middle;">S</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Table 2: PFM2100 Crane-specific Wiring ── -->
+<div class="card" style="overflow-x:auto;margin-top:8px;">
+  <div class="card-header">
+    <h2>PFM2100 — Crane Wiring</h2>
+    <span class="ch-count">Crane-specific cable &amp; terminal assignments</span>
+  </div>
+
+  <div class="info-box" style="margin-bottom:14px;">
+    The table below shows how PAL40 {{ connector.designation }} pins are wired on the <strong>PFM2100</strong> marine crane.
+    Other crane types will have different cable and terminal assignments.
+  </div>
+
+  <table class="pin-table">
+    <thead>
+      <tr>
+        <th style="width:52px;text-align:center;">Pin</th>
+        <th>Function</th>
+        <th style="width:64px;">Cable</th>
         <th style="width:90px;">Wire / Color</th>
         <th style="width:120px;">Terminal / Pin</th>
-        <th style="width:70px;">Device</th>
-        <th style="width:150px;">Identification</th>
+        <th style="width:74px;">Device</th>
+        <th style="width:155px;">Identification</th>
         <th style="width:90px;">Device Cable</th>
       </tr>
     </thead>
@@ -55,7 +105,6 @@
             {{ pin.pin_number }}
           </a>
         </td>
-
         <td>
           <span class="badge badge-{{ pin.signal_type }}" style="margin-right:6px;vertical-align:middle;">{{ pin.signal_type }}</span>
           {{ pin.function }}
@@ -63,19 +112,15 @@
             <span class="badge badge-safety" style="margin-left:6px;vertical-align:middle;">S</span>
           {% endif %}
         </td>
-
         <td style="font-family:monospace;font-size:.82rem;">{{ pin.cable }}</td>
         <td style="font-family:monospace;font-size:.82rem;">{{ pin.wire_color }}</td>
         <td style="font-size:.82rem;">{{ pin.terminal }}</td>
-
         <td style="font-family:monospace;font-size:.82rem;font-weight:600;color:var(--pal-navy);">
           {% if pin.device %}{{ pin.device.identification }}{% endif %}
         </td>
-
         <td style="font-size:.82rem;color:var(--pal-gray-700);">
           {% if pin.device %}{{ pin.device.name }}{% endif %}
         </td>
-
         <td style="font-family:monospace;font-size:.82rem;">
           {% if pin.device %}{{ pin.device.cable }}{% endif %}
         </td>
@@ -118,7 +163,6 @@
 .pin-table tbody td { padding: 7px 10px; border-bottom: 1px solid var(--pal-border); vertical-align: middle; }
 .pin-table tbody tr:hover td { background: var(--pal-orange-light); }
 
-/* Row tints by signal type */
 .row-gnd td { color: var(--pal-gray-300); background: var(--pal-gray-50); }
 .row-pwr td { background: #FFF5F5; }
 .row-can td { background: #F3EFFC; }
