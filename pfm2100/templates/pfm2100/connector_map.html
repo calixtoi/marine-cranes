@@ -1,0 +1,607 @@
+{% extends "pal40/base.html" %}
+{% block title %}Connector Map — PFM2100{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm2100:device_list' %}">PFM2100</a>
+  <span class="sep">/</span>
+  Connector Map
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>PFM2100 — Connector Map</h1>
+    <div class="ph-sub">Interactive pin-to-device map · PAL40 Molex connectors</div>
+  </div>
+  <div id="stats-bar" style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;"></div>
+</div>
+
+<!-- ── Controls ── -->
+<div class="map-controls">
+
+  <div class="conn-tabs" role="tablist">
+    {% for conn in connectors %}
+    <button class="ctab{% if forloop.first %} active{% endif %}"
+            data-idx="{{ forloop.counter0 }}"
+            onclick="switchConn({{ forloop.counter0 }})">
+      {{ conn.designation }}&nbsp;—&nbsp;Molex&nbsp;{{ conn.color }}
+    </button>
+    {% endfor %}
+    <button class="ctab" data-idx="both" onclick="switchConn('both')">Both</button>
+  </div>
+
+  <div class="search-wrap">
+    <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="map-search" type="search" placeholder="Pin, device, function…" oninput="doSearch(this.value)">
+  </div>
+
+  <div class="type-filters">
+    <button class="tf active" data-t="ALL"    onclick="filterSig('ALL',this)">All</button>
+    <button class="tf tf-DI"  data-t="DI"     onclick="filterSig('DI',this)">DI</button>
+    <button class="tf tf-DO"  data-t="DO"     onclick="filterSig('DO',this)">DO</button>
+    <button class="tf tf-AI"  data-t="AI"     onclick="filterSig('AI',this)">AI</button>
+    <button class="tf tf-CAN" data-t="CAN"    onclick="filterSig('CAN',this)">CAN</button>
+    <button class="tf tf-PWR" data-t="PWR"    onclick="filterSig('PWR',this)">PWR</button>
+    <button class="tf tf-GND" data-t="GND"    onclick="filterSig('GND',this)">GND</button>
+    <button class="tf tf-SAF" data-t="SAFETY" onclick="filterSig('SAFETY',this)">⚠ Safety</button>
+    <button class="tf tf-DEV" data-t="DEVICE" onclick="filterSig('DEVICE',this)">Has Device</button>
+  </div>
+
+</div>
+
+<!-- ── Main grid ── -->
+<div class="map-grid">
+
+  <!-- Left: connectors -->
+  <div class="connectors-col">
+
+    {% for conn in connectors %}
+    <!-- Single-connector views -->
+    <div class="cpanel" id="cpanel-{{ forloop.counter0 }}"
+         style="{% if not forloop.first %}display:none;{% endif %}">
+      <div class="cpanel-hdr">
+        <span class="cpanel-title">{{ conn.designation }}</span>
+        <span class="cpanel-sub">Molex {{ conn.color }} &nbsp;·&nbsp; {{ conn.pins.count }} pins</span>
+        <a href="{% url 'pfm2100:connector_wiring' conn.pk %}" class="cpanel-link">Full wiring →</a>
+      </div>
+      <div class="conn-body cb-{{ conn.color|lower }}">
+        <div class="conn-body-label">{{ conn.designation }} · {{ conn.color }}</div>
+        <div class="pin-grid">
+          {% for pin in conn.pins.all %}
+          <div class="pc sig-{{ pin.signal_type }}{% if pin.safety_related %} safety{% endif %}{% if pin.device %} has-dev{% endif %}"
+               data-cid="{{ conn.pk }}"
+               data-n="{{ pin.pin_number }}"
+               data-t="{{ pin.signal_type }}"
+               data-safe="{{ pin.safety_related|yesno:'1,0' }}"
+               data-dev="{{ pin.device.identification|default:'' }}"
+               data-q="{{ pin.pin_number }} {{ pin.function|lower }} {{ pin.signal_type|lower }} {{ pin.device.identification|default:''|lower }} {{ pin.device.name|default:''|lower }} {{ pin.wire_color|lower }}"
+               title="Pin {{ pin.pin_number }}: {{ pin.function }}"
+               onclick="selectPin(this)">
+            <span class="pc-n">{{ pin.pin_number }}</span>
+            <span class="pc-t">{{ pin.signal_type }}</span>
+            {% if pin.wire_color %}<span class="pc-dot" data-color="{{ pin.wire_color }}"></span>{% endif %}
+            {% if pin.device %}<span class="pc-dev">{{ pin.device.identification }}</span>{% endif %}
+            {% if pin.safety_related %}<span class="pc-s">S</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="conn-notch"></div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Both-view (smaller chips, two connectors side by side) -->
+    <div id="cpanel-both" style="display:none;">
+      <div class="both-grid">
+        {% for conn in connectors %}
+        <div>
+          <div class="cpanel-hdr">
+            <span class="cpanel-title">{{ conn.designation }}</span>
+            <span class="cpanel-sub">Molex {{ conn.color }}</span>
+            <a href="{% url 'pfm2100:connector_wiring' conn.pk %}" class="cpanel-link">Wiring →</a>
+          </div>
+          <div class="conn-body cb-{{ conn.color|lower }}">
+            <div class="conn-body-label">{{ conn.designation }} · {{ conn.color }}</div>
+            <div class="pin-grid pin-grid-sm">
+              {% for pin in conn.pins.all %}
+              <div class="pc pc-sm sig-{{ pin.signal_type }}{% if pin.safety_related %} safety{% endif %}{% if pin.device %} has-dev{% endif %}"
+                   data-cid="{{ conn.pk }}"
+                   data-n="{{ pin.pin_number }}"
+                   data-t="{{ pin.signal_type }}"
+                   data-safe="{{ pin.safety_related|yesno:'1,0' }}"
+                   data-dev="{{ pin.device.identification|default:'' }}"
+                   data-q="{{ pin.pin_number }} {{ pin.function|lower }} {{ pin.signal_type|lower }} {{ pin.device.identification|default:''|lower }} {{ pin.device.name|default:''|lower }} {{ pin.wire_color|lower }}"
+                   title="Pin {{ pin.pin_number }}: {{ pin.function }}"
+                   onclick="selectPin(this)">
+                <span class="pc-n">{{ pin.pin_number }}</span>
+                {% if pin.wire_color %}<span class="pc-dot" data-color="{{ pin.wire_color }}"></span>{% endif %}
+                {% if pin.safety_related %}<span class="pc-s">S</span>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            <div class="conn-notch"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div><!-- /connectors-col -->
+
+  <!-- Right: detail panel -->
+  <div class="detail-col" id="detail-col">
+
+    <div id="detail-empty">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      <p>Click any pin<br>to see its connection details</p>
+    </div>
+
+    <div id="detail-content"></div>
+
+  </div>
+
+</div><!-- /map-grid -->
+
+<!-- Legend -->
+<div class="card" style="margin-top:16px;padding:12px 20px;">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:.79rem;">
+    <span style="font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--pal-gray-500);">Legend:</span>
+    <span class="leg sig-DI"><i></i>Digital Input</span>
+    <span class="leg sig-DO"><i></i>Digital Output</span>
+    <span class="leg sig-AI"><i></i>Analog In (4–20 mA)</span>
+    <span class="leg sig-CAN"><i></i>CAN Bus</span>
+    <span class="leg sig-PWR"><i></i>Power Supply</span>
+    <span class="leg sig-GND"><i></i>Ground</span>
+    <span class="leg"><i style="border:2px solid var(--pal-orange);background:transparent;border-radius:2px;"></i>Safety pin</span>
+    <span class="leg"><i style="border-radius:50%;background:#8D4E2A;"></i>Wire colour dot</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     STYLES
+════════════════════════════════════════════ -->
+<style>
+/* Controls bar */
+.map-controls {
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+  padding:12px 16px; margin-bottom:14px;
+  background:var(--pal-white); border:1px solid var(--pal-border);
+  border-radius:var(--radius); box-shadow:var(--pal-shadow);
+}
+
+/* Tabs */
+.conn-tabs { display:flex; gap:4px; flex-shrink:0; }
+.ctab {
+  padding:6px 13px; font-size:.77rem; font-weight:600;
+  border:1px solid var(--pal-border); border-radius:3px;
+  background:var(--pal-gray-50); color:var(--pal-gray-700);
+  cursor:pointer; transition:all .12s; white-space:nowrap;
+}
+.ctab:hover { border-color:var(--pal-orange); color:var(--pal-orange); }
+.ctab.active { background:var(--pal-navy); color:white; border-color:var(--pal-navy); }
+
+/* Search */
+.search-wrap { position:relative; flex:1; min-width:160px; max-width:240px; }
+.search-icon { position:absolute; left:9px; top:50%; transform:translateY(-50%); color:#9E9E9E; pointer-events:none; }
+#map-search {
+  width:100%; padding:7px 10px 7px 30px;
+  border:1px solid var(--pal-border); border-radius:3px;
+  font-size:.82rem; background:var(--pal-gray-50); outline:none; transition:border-color .12s;
+}
+#map-search:focus { border-color:var(--pal-orange); background:white; }
+
+/* Type filters */
+.type-filters { display:flex; flex-wrap:wrap; gap:4px; }
+.tf {
+  padding:4px 9px; font-size:.7rem; font-weight:700; letter-spacing:.3px;
+  text-transform:uppercase; border-radius:2px; border:1px solid transparent;
+  background:var(--pal-gray-100); color:var(--pal-gray-700); cursor:pointer; transition:all .12s;
+}
+.tf:hover { opacity:.85; }
+.tf.active { color:white; }
+.tf-DI.active  { background:#1565C0; }
+.tf-DO.active  { background:#E65100; }
+.tf-AI.active  { background:#2E7D32; }
+.tf-CAN.active { background:#4527A0; }
+.tf-PWR.active { background:#C62828; }
+.tf-GND.active { background:#757575; }
+.tf-SAF.active { background:var(--pal-orange); }
+.tf-DEV.active { background:var(--pal-navy); }
+.tf[data-t="ALL"].active { background:var(--pal-charcoal); }
+
+/* Main grid */
+.map-grid {
+  display:grid;
+  grid-template-columns: 1fr 310px;
+  gap:16px;
+  align-items:start;
+}
+
+/* Connector panel */
+.cpanel { margin-bottom:0; }
+.cpanel-hdr { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.cpanel-title { font-size:.9rem; font-weight:700; color:var(--pal-navy); text-transform:uppercase; letter-spacing:.5px; }
+.cpanel-sub { font-size:.77rem; color:var(--pal-gray-500); }
+.cpanel-link { margin-left:auto; font-size:.74rem; color:var(--pal-orange); font-weight:600; }
+.cpanel-link:hover { text-decoration:underline; }
+
+/* Connector body */
+.conn-body {
+  background:var(--pal-white); border:2px solid var(--pal-border);
+  border-radius:6px; padding:12px 10px 20px; position:relative;
+  box-shadow:var(--pal-shadow);
+}
+.cb-blue { border-color:#90CAF9; }
+.cb-grey, .cb-gray { border-color:#BDBDBD; }
+.conn-body-label {
+  font-size:.63rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.6px; color:var(--pal-gray-500); margin-bottom:10px;
+}
+.conn-notch {
+  position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+  width:22px; height:8px; background:var(--pal-border); border-radius:0 0 4px 4px;
+}
+
+/* Pin grid — 8 columns */
+.pin-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:5px; }
+.pin-grid-sm { gap:3px; }
+
+/* Both view side-by-side */
+.both-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+
+/* Pin chip */
+.pc {
+  position:relative; border-radius:4px;
+  border:1px solid rgba(0,0,0,.06); border-left-width:3px;
+  padding:5px 4px 4px; cursor:pointer; user-select:none;
+  transition:transform .1s, box-shadow .1s, opacity .15s;
+  min-height:60px; display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.pc:hover { transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,.14); z-index:2; }
+.pc.selected {
+  transform:translateY(-2px) scale(1.06);
+  box-shadow:0 0 0 2px var(--pal-orange), 0 4px 16px rgba(240,90,40,.25);
+  z-index:10;
+}
+.pc.dimmed { opacity:.18; pointer-events:none; }
+
+/* Small chip */
+.pc-sm { min-height:44px; padding:4px 3px 3px; gap:1px; }
+
+/* Signal colours */
+.sig-DI  { background:#EBF4FC; border-left-color:#1565C0; }
+.sig-DO  { background:#FFF3E0; border-left-color:#E65100; }
+.sig-AI  { background:#E8F5E9; border-left-color:#2E7D32; }
+.sig-AO  { background:#F3E5F5; border-left-color:#6A1B9A; }
+.sig-CAN { background:#EDE7F6; border-left-color:#4527A0; }
+.sig-PWR { background:#FFEBEE; border-left-color:#C62828; }
+.sig-GND { background:#F5F5F5; border-left-color:#9E9E9E; }
+
+/* Safety outline */
+.pc.safety { outline:2px solid var(--pal-orange); outline-offset:1px; }
+
+/* Chip content */
+.pc-n { font-size:.76rem; font-weight:800; color:var(--pal-charcoal); font-family:'Courier New',monospace; line-height:1; }
+.pc-t { font-size:.54rem; font-weight:700; text-transform:uppercase; letter-spacing:.2px; color:var(--pal-gray-500); line-height:1; }
+.pc-dev {
+  font-size:.57rem; font-weight:700; font-family:monospace;
+  color:var(--pal-navy); background:rgba(28,58,92,.09);
+  padding:1px 3px; border-radius:2px; line-height:1;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.pc-dot {
+  width:8px; height:8px; border-radius:50%;
+  border:1px solid rgba(0,0,0,.18); display:inline-block; flex-shrink:0;
+}
+.pc-s {
+  position:absolute; top:2px; right:3px;
+  font-size:.5rem; font-weight:900; color:var(--pal-orange); line-height:1;
+}
+
+/* Wire colour dots */
+.pc-dot[data-color="BN"]   { background:#8D4E2A; }
+.pc-dot[data-color="BK"]   { background:#1E1E1E; }
+.pc-dot[data-color="BU"]   { background:#1A6FA8; }
+.pc-dot[data-color="WH"]   { background:#D8DCE0; border-color:#999; }
+.pc-dot[data-color="GN"]   { background:#1E9455; }
+.pc-dot[data-color="YE"]   { background:#E8B800; }
+.pc-dot[data-color="RD"]   { background:#B03020; }
+.pc-dot[data-color="GY"]   { background:#6E7880; }
+.pc-dot[data-color="VT"]   { background:#7133A0; }
+.pc-dot[data-color="PK"]   { background:#C8186A; }
+.pc-dot[data-color="OG"]   { background:#D06418; }
+.pc-dot[data-color="GN/YE"]{ background:linear-gradient(135deg,#1E9455 50%,#E8B800 50%); }
+.pc-dot[data-color="BU/RD"]{ background:linear-gradient(135deg,#1A6FA8 50%,#B03020 50%); }
+.pc-dot[data-color="GY/PK"]{ background:linear-gradient(135deg,#6E7880 50%,#C8186A 50%); }
+
+/* ── Detail column ── */
+.detail-col {
+  background:var(--pal-white); border:1px solid var(--pal-border);
+  border-radius:var(--radius); box-shadow:var(--pal-shadow);
+  position:sticky; top:76px;
+  max-height:calc(100vh - 100px); overflow-y:auto;
+}
+#detail-empty {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:48px 20px; color:var(--pal-gray-500);
+  text-align:center; gap:10px; font-size:.84rem; line-height:1.6;
+}
+
+/* Detail content */
+.dp-hdr { background:var(--pal-navy); color:white; padding:16px 18px; border-radius:var(--radius) var(--radius) 0 0; }
+.dp-pinnum { font-size:1.8rem; font-weight:900; font-family:monospace; line-height:1; color:var(--pal-orange); }
+.dp-fn { font-size:.87rem; color:rgba(255,255,255,.85); margin-top:5px; line-height:1.45; }
+.dp-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.dp-tbadge {
+  display:inline-block; padding:2px 8px; border-radius:2px;
+  font-size:.67rem; font-weight:800; text-transform:uppercase; letter-spacing:.3px;
+}
+.dp-tbadge-safety { background:var(--pal-orange); color:white; }
+
+.dp-sec { padding:13px 18px; border-bottom:1px solid var(--pal-border); }
+.dp-sec:last-child { border-bottom:none; }
+.dp-sec-title {
+  font-size:.63rem; font-weight:800; text-transform:uppercase;
+  letter-spacing:.7px; color:var(--pal-gray-500); margin-bottom:9px;
+}
+
+.dp-kv { display:flex; gap:8px; margin-bottom:7px; font-size:.83rem; align-items:baseline; }
+.dp-kv:last-child { margin-bottom:0; }
+.dp-k { font-size:.71rem; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--pal-gray-500); min-width:72px; flex-shrink:0; }
+.dp-v { color:var(--pal-charcoal); }
+.dp-v code { font-family:monospace; background:var(--pal-gray-100); padding:1px 5px; border-radius:2px; font-size:.78rem; }
+
+.dp-wire-row {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 12px; background:var(--pal-gray-50);
+  border:1px solid var(--pal-border); border-radius:var(--radius); font-size:.83rem;
+}
+.dp-wswatch { width:14px; height:14px; border-radius:50%; border:1px solid rgba(0,0,0,.2); flex-shrink:0; }
+
+.dp-dev-card {
+  background:var(--pal-gray-50); border:1px solid var(--pal-border);
+  border-left:3px solid var(--pal-orange); border-radius:var(--radius); padding:10px 12px;
+}
+.dp-dev-id { font-family:monospace; font-size:1.05rem; font-weight:800; color:var(--pal-navy); }
+.dp-dev-name { font-size:.82rem; color:var(--pal-charcoal); margin-top:2px; }
+.dp-dev-meta { font-size:.75rem; color:var(--pal-gray-500); margin-top:4px; }
+
+.dp-link {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:.77rem; font-weight:600; color:var(--pal-orange); margin-top:4px;
+}
+.dp-link:hover { text-decoration:underline; }
+
+.dp-safety-box {
+  background:var(--pal-orange-light); border-left:3px solid var(--pal-orange);
+  border-radius:0 var(--radius) var(--radius) 0;
+  padding:8px 12px; font-size:.78rem; color:var(--pal-charcoal); font-weight:600;
+}
+.dp-no-data { font-size:.82rem; color:var(--pal-gray-500); font-style:italic; }
+
+/* Legend */
+.leg { display:inline-flex; align-items:center; gap:5px; color:var(--pal-gray-700); }
+.leg i { display:inline-block; width:12px; height:12px; border-radius:2px; border:1px solid transparent; flex-shrink:0; }
+.sig-DI  i { background:#1565C0; }
+.sig-DO  i { background:#E65100; }
+.sig-AI  i { background:#2E7D32; }
+.sig-CAN i { background:#4527A0; }
+.sig-PWR i { background:#C62828; }
+.sig-GND i { background:#9E9E9E; }
+
+@media (max-width:860px) {
+  .map-grid { grid-template-columns:1fr; }
+  .detail-col { position:static; max-height:none; }
+  .pin-grid { grid-template-columns:repeat(6,1fr); }
+  .both-grid { grid-template-columns:1fr; }
+}
+</style>
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+(function () {
+
+/* ── Data ── */
+var DATA = {{ pin_data_json|safe }};
+
+/* Flat lookup  connPk_pinNum → pin object */
+var LOOKUP = {};
+DATA.connectors.forEach(function (c) {
+  c.pins.forEach(function (p) { LOOKUP[c.pk + '_' + p.n] = p; });
+});
+
+/* Wire colour hex */
+var WHEX = {
+  BN:'#8D4E2A', BK:'#1E1E1E', BU:'#1A6FA8', WH:'#D8DCE0',
+  GN:'#1E9455', YE:'#E8B800', RD:'#B03020', GY:'#6E7880',
+  VT:'#7133A0', PK:'#C8186A', OG:'#D06418',
+  'GN/YE':'#1E9455', 'BU/RD':'#1A6FA8', 'GY/PK':'#6E7880'
+};
+
+/* Signal badge colours */
+var SIG = {
+  DI:  {bg:'#EBF4FC', cl:'#1565C0'},
+  DO:  {bg:'#FFF3E0', cl:'#E65100'},
+  AI:  {bg:'#E8F5E9', cl:'#2E7D32'},
+  AO:  {bg:'#F3E5F5', cl:'#6A1B9A'},
+  CAN: {bg:'#EDE7F6', cl:'#4527A0'},
+  PWR: {bg:'#FFEBEE', cl:'#C62828'},
+  GND: {bg:'#F5F5F5', cl:'#757575'}
+};
+
+/* ── State ── */
+var activeConn   = 0;
+var activeFilter = 'ALL';
+var activeSearch = '';
+var selChip      = null;
+
+/* ── Build connector stats in page header ── */
+(function buildStats() {
+  var bar = document.getElementById('stats-bar');
+  if (!bar) return;
+  DATA.connectors.forEach(function (c) {
+    var counts = {};
+    c.pins.forEach(function (p) { counts[p.type] = (counts[p.type]||0)+1; });
+    var html = '<span style="font-size:.74rem;font-weight:700;color:var(--pal-gray-500);">'+c.designation+':</span>';
+    Object.keys(counts).forEach(function (t) {
+      var s = SIG[t] || {bg:'#eee',cl:'#555'};
+      html += '<span class="stat-chip" style="background:'+s.bg+';border-color:'+s.cl+'30;color:'+s.cl+';">'
+            + t + ' <strong>' + counts[t] + '</strong></span>';
+    });
+    bar.insertAdjacentHTML('beforeend',
+      '<span style="display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;">'+html+'</span>');
+  });
+})();
+
+/* ── Connector tab switch ── */
+window.switchConn = function (idx) {
+  document.querySelectorAll('.cpanel').forEach(function (el) { el.style.display = 'none'; });
+  document.getElementById('cpanel-both').style.display = 'none';
+  if (idx === 'both') {
+    document.getElementById('cpanel-both').style.display = 'block';
+  } else {
+    var p = document.getElementById('cpanel-' + idx);
+    if (p) p.style.display = 'block';
+  }
+  activeConn = idx;
+  document.querySelectorAll('.ctab').forEach(function (b) {
+    b.classList.toggle('active', String(b.dataset.idx) === String(idx));
+  });
+  clearDetail();
+};
+
+/* ── Filter ── */
+window.filterSig = function (type, btn) {
+  activeFilter = type;
+  document.querySelectorAll('.tf').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  applyFilters();
+};
+
+window.doSearch = function (val) {
+  activeSearch = val.toLowerCase().trim();
+  applyFilters();
+};
+
+function applyFilters() {
+  document.querySelectorAll('.pc').forEach(function (chip) {
+    var pass = matchesFilter(chip) && matchesSearch(chip);
+    chip.classList.toggle('dimmed', !pass);
+  });
+}
+
+function matchesFilter(chip) {
+  if (activeFilter === 'ALL')    return true;
+  if (activeFilter === 'SAFETY') return chip.dataset.safe === '1';
+  if (activeFilter === 'DEVICE') return !!chip.dataset.dev;
+  return chip.dataset.t === activeFilter;
+}
+
+function matchesSearch(chip) {
+  if (!activeSearch) return true;
+  return chip.dataset.q.includes(activeSearch);
+}
+
+/* ── Pin selection ── */
+window.selectPin = function (chip) {
+  if (selChip) selChip.classList.remove('selected');
+  chip.classList.add('selected');
+  selChip = chip;
+  var pin = LOOKUP[chip.dataset.cid + '_' + chip.dataset.n];
+  if (pin) renderDetail(pin);
+};
+
+function clearDetail() {
+  if (selChip) { selChip.classList.remove('selected'); selChip = null; }
+  document.getElementById('detail-empty').style.display = '';
+  document.getElementById('detail-content').innerHTML = '';
+}
+
+/* ── Render detail panel ── */
+function renderDetail(pin) {
+  document.getElementById('detail-empty').style.display = 'none';
+  var s = SIG[pin.type] || {bg:'#eee', cl:'#555'};
+  var html = '';
+
+  /* header */
+  html += '<div class="dp-hdr">'
+    + '<div class="dp-pinnum">' + esc(pin.conn_desig) + ' · ' + pin.n + '</div>'
+    + '<div class="dp-fn">' + esc(pin.fn) + '</div>'
+    + '<div class="dp-badges">'
+    + '<span class="dp-tbadge" style="background:'+s.bg+';color:'+s.cl+';border:1px solid '+s.cl+'40;">'
+    + esc(pin.type) + '</span>';
+  if (pin.safety) {
+    html += '<span class="dp-tbadge dp-tbadge-safety">SAFETY</span>';
+  }
+  html += '</div></div>';
+
+  /* safety notice */
+  if (pin.safety) {
+    html += '<div class="dp-sec"><div class="dp-safety-box">'
+      + '⚠ Safety-related — IEC 13849 PL c architecture. Handle with care.</div></div>';
+  }
+
+  /* wiring */
+  html += '<div class="dp-sec"><div class="dp-sec-title">PFM2100 Wiring</div>';
+  if (pin.cable || pin.wire || pin.terminal) {
+    var wh = WHEX[pin.wire] || '#888';
+    html += '<div class="dp-wire-row">'
+      + (pin.wire ? '<span class="dp-wswatch" style="background:'+wh+';" title="'+esc(pin.wire)+'"></span>' : '')
+      + (pin.cable ? '<code style="font-family:monospace;background:var(--pal-gray-100);padding:2px 7px;border-radius:2px;font-size:.78rem;font-weight:700;border:1px solid var(--pal-border);">' + esc(pin.cable) + '</code>' : '')
+      + (pin.wire  ? '<span style="font-size:.8rem;color:var(--pal-gray-700);">' + esc(pin.wire) + '</span>' : '')
+      + (pin.terminal ? '<span style="margin-left:auto;font-family:monospace;font-size:.82rem;color:var(--pal-navy);font-weight:700;">' + esc(pin.terminal) + '</span>' : '')
+      + '</div>';
+  } else {
+    html += '<p class="dp-no-data">No wiring data recorded for this pin</p>';
+  }
+  html += '</div>';
+
+  /* connected device */
+  html += '<div class="dp-sec"><div class="dp-sec-title">Connected Device</div>';
+  if (pin.device) {
+    html += '<div class="dp-dev-card">'
+      + '<div class="dp-dev-id">' + esc(pin.device.id) + '</div>'
+      + '<div class="dp-dev-name">' + esc(pin.device.name) + '</div>'
+      + '<div class="dp-dev-meta">' + esc(pin.device.dtype);
+    if (pin.device.cable) {
+      html += ' &nbsp;·&nbsp; Cable: <code style="font-family:monospace;">' + esc(pin.device.cable) + '</code>';
+    }
+    html += '</div></div>';
+  } else {
+    html += '<p class="dp-no-data">No device assigned to this pin</p>';
+  }
+  html += '</div>';
+
+  /* PAL40 link */
+  html += '<div class="dp-sec"><div class="dp-sec-title">Reference</div>'
+    + '<a href="/connector/' + pin.conn_pk + '/pin/' + pin.n + '/" class="dp-link" target="_blank">'
+    + '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+    + ' PAL40 Pin Detail</a></div>';
+
+  document.getElementById('detail-content').innerHTML = html;
+}
+
+/* ── Helpers ── */
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── Keyboard: Escape to deselect ── */
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') clearDetail();
+});
+
+})();
+</script>
+
+{% endblock %}

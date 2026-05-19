@@ -530,6 +530,11 @@
 
       <div id="pfm2100-devices"
            style="{% if is_pfm_active != 'pfm2100' %}display:none;{% endif %}">
+        <a href="{% url 'pfm2100:connector_map' %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'connector_map' %}active{% endif %}"
+           style="font-weight:{% if request.resolver_match.url_name == 'connector_map' %}700{% else %}600{% endif %};">
+          ⬡ Connector Map
+        </a>
         <a href="{% url 'pfm2100:device_list' %}"
            class="sidebar-item {% if request.resolver_match.url_name == 'device_list' %}active{% endif %}">
           All Devices
