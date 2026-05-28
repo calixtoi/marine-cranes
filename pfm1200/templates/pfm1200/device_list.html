@@ -1,11 +1,11 @@
 {% extends "pal40/base.html" %}
-{% block title %}PFM2100 Devices{% endblock %}
+{% block title %}PFM1200 Devices{% endblock %}
 
 {% block breadcrumb %}
 <nav class="breadcrumb">
   <a href="{% url 'pal40:index' %}">Home</a>
   <span class="sep">/</span>
-  PFM2100
+  PFM1200
   <span class="sep">/</span>
   All Devices
 </nav>
@@ -15,8 +15,8 @@
 
 <div class="page-header">
   <div>
-    <h1>PFM2100 Marine Crane</h1>
-    <div class="ph-sub">Device Registry — Electrical &amp; Electronic Components</div>
+    <h1>PFM1200 Marine Crane</h1>
+    <div class="ph-sub">Device Registry — Electrical &amp; Electronic Components (KEB01571B / KEB01572B)</div>
   </div>
   <span class="badge badge-GND" style="margin-left:auto;">{{ devices|length }} devices</span>
 </div>
@@ -51,14 +51,14 @@
           {% else %}—{% endif %}
         </td>
         <td>
-          <a href="{% url 'pfm2100:device_detail' dev.pk %}">
+          <a href="{% url 'pfm1200:device_detail' dev.order %}">
             <code style="font-size:.78rem;">
               {% if dev.part_number and dev.part_number != '_' %}{{ dev.part_number }}{% else %}—{% endif %}
             </code>
           </a>
         </td>
         <td>
-          <a href="{% url 'pfm2100:device_detail' dev.pk %}" style="font-weight:600;">
+          <a href="{% url 'pfm1200:device_detail' dev.order %}" style="font-weight:600;">
             {{ dev.description }}
           </a>
         </td>
@@ -92,7 +92,12 @@
           {% endfor %}
         </td>
         <td style="font-size:.75rem;color:var(--pal-gray-500);">
-          {% for cable in dev.cables.all %}{{ cable.connection_details }}{% endfor %}
+          {% for cable in dev.cables.all %}
+            {{ cable.connection_details }}
+            {% if cable.length_mm %}
+              <span style="font-family:monospace;color:var(--pal-navy);font-weight:600;">· {{ cable.length_mm }}&thinsp;mm</span>
+            {% endif %}
+          {% endfor %}
         </td>
       </tr>
       {% endfor %}

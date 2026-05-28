@@ -1,0 +1,486 @@
+{% extends "pal40/base.html" %}
+{% block title %}PFM1200 Wiring Diagram{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm1200:device_list' %}">PFM1200</a>
+  <span class="sep">/</span>
+  Wiring Diagram
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header" style="margin-bottom:14px;">
+  <div>
+    <h1>PFM1200 Wiring Diagram</h1>
+    <div class="ph-sub">EPLAN-style cable and device visualization · KEB01571B / KEB01572B</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+    <label style="font-size:.75rem;color:var(--pal-gray-500);font-weight:600;">Filter:</label>
+    <select id="jb-filter" style="font-size:.78rem;padding:5px 10px;background:var(--pal-gray-100);border:1px solid var(--pal-border);border-radius:var(--radius);color:var(--pal-text);">
+      <option value="all">All junction boxes</option>
+      <option value="XX3">Junction Box XX3</option>
+      <option value="XX4">Junction Box XX4</option>
+      <option value="C70">C70 Molex Blue</option>
+      <option value="C71">C71 Molex Grey</option>
+      <option value="C1">Remote Control C1</option>
+    </select>
+  </div>
+</div>
+
+<div id="wd-container" style="overflow-x:auto;overflow-y:auto;background:#000;border-radius:var(--radius);border:1px solid #333;padding:0;">
+  <canvas id="wd-canvas" style="display:block;cursor:default;"></canvas>
+</div>
+
+<div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap;font-size:.72rem;color:var(--pal-gray-500);">
+  <span>Scroll horizontally to see all cables &nbsp;·&nbsp; Hover over a cable column to highlight</span>
+  <span id="wd-status" style="margin-left:auto;color:var(--pal-orange);font-weight:600;"></span>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ── Raw data from Django ── */
+const CABLES = {{ cable_data_json|safe }};
+
+/* ── Wire colour hex ── */
+const HEX = {
+  'BN':'#8D4E2A','BK':'#3A3F4A','BU':'#1A6FA8','WH':'#D8DCE0',
+  'GN':'#1E9455','YE':'#E8B800','RD':'#C03020','GY':'#6E7880',
+  'VT':'#7133A0','PK':'#C8186A','OG':'#D06418','RD/BU':'#8050A0',
+  'GY/PK':'#907878','GN/YE':'#50A060','BU/RD':'#6080B0',
+  '1':'#FFFFFF','2':'#FFFFFF','3':'#FFFFFF','4':'#FFFFFF',
+  '5':'#FFFFFF','6':'#FFFFFF','BU':'#1A6FA8'
+};
+function wireHex(c){
+  var k = (c||'').toUpperCase();
+  return HEX[k] || HEX[k.replace('/','').slice(0,2)] || '#888888';
+}
+
+/* ── EPLAN colour scheme ── */
+const CLR = {
+  bg:         '#000000',
+  busBar:     '#2288FF',
+  busLabel:   '#FFFFFF',
+  grid:       '#1A1A1A',
+  cable:      '#FFFF00',    // cable ID label
+  cableRef:   '#00FF00',    // device ref label
+  wireLabel:  '#FFFF00',    // wire colour text on wire
+  terminal:   '#FFFF00',    // terminal ref text
+  deviceBox:  '#FFFF00',    // device box border
+  deviceText: '#00FF00',    // device description text
+  pinCircle:  '#FFFF00',    // pin dot fill
+  pinText:    '#000000',    // pin number inside dot
+  blind:      '#555555',    // blind wire
+  blindText:  '#888888',
+  divider:    '#333333',
+};
+
+/* ── Layout constants ── */
+const WIRE_PITCH  = 28;   // px between wires in a cable
+const COL_PAD     = 22;   // horizontal padding inside a column
+const TOP_H       = 140;  // height for terminal labels above bus
+const BUS_H       = 14;   // bus bar height
+const WIRE_RUN    = 200;  // vertical wire length (bus → device box)
+const DEV_BOX_H   = 58;   // device box height
+const DEV_LABEL_H = 72;   // text below box
+const TOTAL_H     = TOP_H + BUS_H + WIRE_RUN + DEV_BOX_H + DEV_LABEL_H + 32;
+
+const PIN_R = 9;           // pin dot radius
+const FONT  = "'Courier New',monospace";
+const SANS  = "'Segoe UI',Arial,sans-serif";
+
+/* ── Canvas setup ── */
+const container = document.getElementById('wd-container');
+const canvas    = document.getElementById('wd-canvas');
+const ctx       = canvas.getContext('2d');
+let   DPR       = window.devicePixelRatio || 1;
+
+/* ── Filtering ── */
+let currentFilter = 'all';
+document.getElementById('jb-filter').addEventListener('change', function(e){
+  currentFilter = e.target.value;
+  draw();
+});
+
+function visibleCables() {
+  if (currentFilter === 'all') return CABLES;
+  return CABLES.filter(function(c){
+    var jb = (c.junction_box || '').toLowerCase();
+    var f  = currentFilter.toLowerCase();
+    return jb.indexOf(f) !== -1;
+  });
+}
+
+/* ── Per-column metrics ── */
+function colWidth(cable) {
+  var n = Math.max(cable.wires.length, 1);
+  return Math.max(n * WIRE_PITCH + COL_PAD * 2, 110);
+}
+
+function wireX(colStartX, wireIdx) {
+  return colStartX + COL_PAD + wireIdx * WIRE_PITCH + WIRE_PITCH / 2;
+}
+
+/* ── Draw symbol inside device box ── */
+function drawSymbol(ctx, cx, cy, bw, bh, cls) {
+  ctx.save();
+  ctx.strokeStyle = CLR.deviceBox;
+  ctx.lineWidth   = 1.5;
+  cls = (cls || '').toLowerCase();
+
+  if (cls.indexOf('acoustic') !== -1) {
+    // Speaker/horn triangle
+    ctx.beginPath();
+    ctx.moveTo(cx - bw*0.28, cy - bh*0.28);
+    ctx.lineTo(cx - bw*0.28, cy + bh*0.28);
+    ctx.lineTo(cx + bw*0.35, cy + bh*0.38);
+    ctx.lineTo(cx + bw*0.35, cy - bh*0.38);
+    ctx.closePath();
+    ctx.stroke();
+    // sound lines
+    ctx.beginPath();
+    ctx.arc(cx + bw*0.44, cy, bh*0.22, -0.6, 0.6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + bw*0.44, cy, bh*0.38, -0.55, 0.55);
+    ctx.stroke();
+
+  } else if (cls.indexOf('lighting') !== -1) {
+    // Circle with rays
+    var r = Math.min(bw, bh) * 0.25;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+    for (var a = 0; a < Math.PI*2; a += Math.PI/4) {
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a)*(r+2), cy + Math.sin(a)*(r+2));
+      ctx.lineTo(cx + Math.cos(a)*(r+7), cy + Math.sin(a)*(r+7));
+      ctx.stroke();
+    }
+
+  } else if (cls.indexOf('safety') !== -1 || cls.indexOf('valve') !== -1) {
+    // Butterfly/valve hourglass
+    ctx.beginPath();
+    ctx.moveTo(cx - bw*0.30, cy - bh*0.30);
+    ctx.lineTo(cx + bw*0.30, cy + bh*0.30);
+    ctx.lineTo(cx + bw*0.30, cy - bh*0.30);
+    ctx.lineTo(cx - bw*0.30, cy + bh*0.30);
+    ctx.closePath();
+    ctx.stroke();
+
+  } else if (cls.indexOf('electromech') !== -1) {
+    // Coil/solenoid symbol
+    var coilW = bw * 0.55, coilH = bh * 0.3;
+    ctx.strokeRect(cx - coilW/2, cy - coilH/2, coilW, coilH);
+    for (var xi = 0; xi < 4; xi++) {
+      ctx.beginPath();
+      ctx.arc(cx - coilW/2 + coilW/4*(xi+0.5), cy, coilH/2, Math.PI, 0);
+      ctx.stroke();
+    }
+
+  } else if (cls.indexOf('analogue') !== -1) {
+    // Sensor circle with arrow
+    var sr = Math.min(bw, bh) * 0.28;
+    ctx.beginPath(); ctx.arc(cx, cy, sr, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - sr*0.5, cy + sr*0.3);
+    ctx.lineTo(cx + sr*0.5, cy - sr*0.3);
+    ctx.lineTo(cx + sr*0.35, cy - sr*0.3);
+    ctx.stroke();
+
+  } else {
+    // Default: rectangle with diagonal (generic sensor/switch)
+    var bx = cx - bw*0.32, by = cy - bh*0.30, bww = bw*0.64, bhh = bh*0.60;
+    ctx.strokeRect(bx, by, bww, bhh);
+    ctx.beginPath();
+    ctx.moveTo(bx, by + bhh);
+    ctx.lineTo(bx + bww, by);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* ── Main draw function ── */
+function draw() {
+  var cables = visibleCables();
+  if (!cables.length) {
+    canvas.width  = 400 * DPR;
+    canvas.height = 100 * DPR;
+    canvas.style.width  = '400px';
+    canvas.style.height = '100px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 400, 100);
+    ctx.fillStyle = '#888';
+    ctx.font = '14px ' + SANS;
+    ctx.textAlign = 'center';
+    ctx.fillText('No cables match the selected filter.', 200, 55);
+    document.getElementById('wd-status').textContent = '';
+    return;
+  }
+
+  /* Compute column positions */
+  var cols = [];
+  var x = 24;
+  cables.forEach(function(c) {
+    var cw = colWidth(c);
+    cols.push({ cable: c, x: x, w: cw });
+    x += cw + 8;
+  });
+  var totalW = x + 16;
+
+  /* Resize canvas */
+  canvas.width        = totalW * DPR;
+  canvas.height       = TOTAL_H * DPR;
+  canvas.style.width  = totalW + 'px';
+  canvas.style.height = TOTAL_H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  /* Background */
+  ctx.fillStyle = CLR.bg;
+  ctx.fillRect(0, 0, totalW, TOTAL_H);
+
+  /* Vertical grid lines between columns */
+  ctx.strokeStyle = CLR.divider;
+  ctx.lineWidth   = 1;
+  cols.forEach(function(col, i) {
+    if (i > 0) {
+      ctx.beginPath();
+      ctx.moveTo(col.x - 4, 0);
+      ctx.lineTo(col.x - 4, TOTAL_H);
+      ctx.stroke();
+    }
+  });
+
+  var busY     = TOP_H;
+  var wireTopY = busY + BUS_H;
+  var devBoxY  = wireTopY + WIRE_RUN;
+  var devBoxBotY = devBoxY + DEV_BOX_H;
+  var devLabelY  = devBoxBotY + 16;
+
+  /* ── Bus bar ── */
+  ctx.fillStyle   = CLR.busBar;
+  ctx.fillRect(0, busY, totalW, BUS_H);
+  ctx.strokeStyle = '#4AA8FF';
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(0, busY, totalW, BUS_H);
+
+  ctx.fillStyle = CLR.busLabel;
+  ctx.font      = 'bold 9px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('XX3 / XX4  TERMINAL STRIP', 10, busY + 10);
+
+  /* ── Per-column rendering ── */
+  cols.forEach(function(col) {
+    var cable  = col.cable;
+    var colX   = col.x;
+    var colW   = col.w;
+    var wires  = cable.wires;
+    var nWires = wires.length;
+    var devCX  = colX + colW / 2;
+
+    /* ── Terminal labels above bus ── */
+    ctx.save();
+    wires.forEach(function(w, wi) {
+      var wx  = wireX(colX, wi);
+      var isBlind = (!w.terminal || w.terminal === 'Blind' || w.terminal === '—');
+
+      if (isBlind) {
+        /* Blind wire stub above bus */
+        ctx.strokeStyle = CLR.blind;
+        ctx.lineWidth   = 2;
+        ctx.setLineDash([3,3]);
+        ctx.beginPath();
+        ctx.moveTo(wx, busY);
+        ctx.lineTo(wx, busY - 18);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle   = CLR.blindText;
+        ctx.font        = 'bold 8px ' + FONT;
+        ctx.textAlign   = 'center';
+        ctx.save();
+        ctx.translate(wx, busY - 22);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillText('Blind', 0, 0);
+        ctx.restore();
+      } else {
+        /* Terminal reference — rotated 90° for compact fit */
+        ctx.strokeStyle = wireHex(w.color);
+        ctx.lineWidth   = 2;
+        ctx.beginPath();
+        ctx.moveTo(wx, busY);
+        ctx.lineTo(wx, busY - 20);
+        ctx.stroke();
+
+        /* Horizontal tick at top */
+        ctx.beginPath();
+        ctx.moveTo(wx - 5, busY - 20);
+        ctx.lineTo(wx + 5, busY - 20);
+        ctx.stroke();
+
+        /* Terminal text rotated */
+        ctx.save();
+        ctx.translate(wx, busY - 26);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillStyle = CLR.terminal;
+        ctx.font      = 'bold 9px ' + FONT;
+        ctx.textAlign = 'left';
+        ctx.fillText(w.terminal, 0, 3);
+        ctx.restore();
+      }
+    });
+    ctx.restore();
+
+    /* ── Cable label band ── */
+    var bandY = wireTopY + 4;
+    ctx.fillStyle   = 'rgba(40,40,0,0.85)';
+    ctx.fillRect(colX + 2, bandY, colW - 4, 18);
+    ctx.strokeStyle = CLR.cable;
+    ctx.lineWidth   = 0.5;
+    ctx.strokeRect(colX + 2, bandY, colW - 4, 18);
+
+    ctx.fillStyle = CLR.cable;
+    ctx.font      = 'bold 10px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText('−' + cable.cable_id, devCX, bandY + 12);
+
+    /* Part number */
+    if (cable.part_number) {
+      ctx.fillStyle = '#AAAAAA';
+      ctx.font      = '8px ' + FONT;
+      ctx.fillText(cable.part_number, devCX, bandY + 22);
+    }
+
+    /* ── Vertical wires ── */
+    wires.forEach(function(w, wi) {
+      var wx      = wireX(colX, wi);
+      var isBlind = (!w.color || w.color === '—' || w.terminal === 'Blind' || w.pin === 'Blind');
+      var wY1     = wireTopY + 28;
+      var wY2     = devBoxY;
+      var wColor  = isBlind ? CLR.blind : wireHex(w.color);
+
+      /* Wire line */
+      ctx.strokeStyle = wColor;
+      ctx.lineWidth   = isBlind ? 1 : 2.5;
+      if (isBlind) ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(wx, wY1);
+      ctx.lineTo(wx, wY2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      /* Wire colour label on wire */
+      if (!isBlind && w.color && w.color !== '—') {
+        var midY = wY1 + (wY2 - wY1) * 0.45;
+        ctx.save();
+        ctx.translate(wx + 4, midY);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillStyle = wColor;
+        ctx.font      = 'bold 8px ' + FONT;
+        ctx.textAlign = 'center';
+        ctx.fillText(w.color, 0, 0);
+        ctx.restore();
+      }
+    });
+
+    /* ── Device box ── */
+    var bx = colX + 6, bw2 = colW - 12;
+    ctx.strokeStyle = CLR.deviceBox;
+    ctx.lineWidth   = 1.5;
+    ctx.strokeRect(bx, devBoxY, bw2, DEV_BOX_H);
+
+    /* Symbol inside box */
+    drawSymbol(ctx, devCX, devBoxY + DEV_BOX_H/2, bw2, DEV_BOX_H, cable.classification);
+
+    /* ── Pin dots at device box top ── */
+    wires.forEach(function(w, wi) {
+      var wx      = wireX(colX, wi);
+      var isBlind = (!w.color || w.color === '—' || w.pin === 'Blind');
+      var pinY    = devBoxY;
+
+      /* Dot on box border */
+      ctx.fillStyle   = isBlind ? CLR.blind : CLR.pinCircle;
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.arc(wx, pinY, PIN_R, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+
+      /* Pin text */
+      var pinTxt = (w.pin || '').replace(/\D/g,'').slice(-2) || (isBlind ? '—' : String(wi+1));
+      ctx.fillStyle = isBlind ? '#888' : CLR.pinText;
+      ctx.font      = 'bold ' + (pinTxt.length > 2 ? '6' : '8') + 'px ' + FONT;
+      ctx.textAlign = 'center';
+      ctx.fillText(pinTxt, wx, pinY + 3);
+    });
+
+    /* ── Device labels below box ── */
+    var lY = devBoxBotY + 13;
+    ctx.fillStyle = '#FFFF88';
+    ctx.font      = 'bold 9px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.fillText('+SS', devCX, lY);
+    lY += 12;
+    ctx.fillStyle = CLR.cable;
+    ctx.font      = 'bold 10px ' + FONT;
+    ctx.fillText('−' + cable.device_ref, devCX, lY);
+    lY += 12;
+    /* Wrap description */
+    var desc = cable.description || '';
+    var words = desc.split(' ');
+    var line = '', maxW = colW - 6;
+    ctx.fillStyle = CLR.cableRef;
+    ctx.font      = '8.5px ' + SANS;
+    words.forEach(function(word) {
+      var test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, devCX, lY); lY += 11;
+        line = word;
+      } else { line = test; }
+    });
+    if (line) ctx.fillText(line, devCX, lY);
+    lY += 11;
+
+    /* Length */
+    if (cable.length_mm) {
+      ctx.fillStyle = '#AAAAAA';
+      ctx.font      = '8px ' + FONT;
+      ctx.fillText(cable.length_mm + ' mm', devCX, lY);
+    }
+
+    /* Junction box reference */
+    lY += 10;
+    var jbShort = (cable.junction_box || '').replace('Junction Box ', '').replace('Molex Blue','C70 Blue').replace('Molex Grey','C71 Grey');
+    ctx.fillStyle = '#6688AA';
+    ctx.font      = '8px ' + FONT;
+    ctx.fillText(jbShort, devCX, lY);
+  });
+
+  document.getElementById('wd-status').textContent =
+    cols.length + ' cables shown';
+}
+
+/* ── Hover highlight ── */
+canvas.addEventListener('mousemove', function(e) {
+  var rect  = canvas.getBoundingClientRect();
+  var mx    = (e.clientX - rect.left);
+  // Just use cursor for now — full highlight would need redraw
+  canvas.style.cursor = 'crosshair';
+});
+
+/* ── Init ── */
+function init() {
+  DPR = window.devicePixelRatio || 1;
+  draw();
+}
+window.addEventListener('resize', function(){ init(); });
+init();
+
+})();
+</script>
+
+{% endblock %}

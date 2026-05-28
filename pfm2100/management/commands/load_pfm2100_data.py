@@ -11,6 +11,7 @@ from pfm2100.models import PFM2100Device, PFM2100Cable, PFM2100WireTerminal
 DEVICES = [
     {
         "order": 1,
+        "device_ref": "U205",
         "part_number": "EEA18563",
         "description": "Slewing Encoder",
         "classification": "Analogue Sensor",
@@ -31,14 +32,15 @@ DEVICES = [
                 "wires": [
                     (1, "RD", "Pin 1", "Terminal 160", "Supply +Vs"),
                     (2, "BK", "Pin 2", "Terminal 800", "Ground 0 V"),
-                    (3, "YE", "Pin 4", "Terminal 628", "CAN High (Bus 0)"),
-                    (4, "GN", "Pin 3", "Terminal 629", "CAN Low (Bus 0)"),
+                    (3, "YE", "Pin 3", "Terminal 629", "CAN Low (Bus 0)"),
+                    (4, "GN", "Pin 4", "Terminal 628", "CAN High (Bus 0)"),
                 ],
             }
         ],
     },
     {
         "order": 2,
+        "device_ref": "U206",
         "part_number": "EEA14709",
         "description": "Mainboom Angle Sensor",
         "classification": "Analogue Sensor",
@@ -59,14 +61,15 @@ DEVICES = [
                 "wires": [
                     (1, "RD", "Pin 1", "Terminal 160", "Supply +Vs"),
                     (2, "BU", "Pin 2", "Terminal 800", "Ground 0 V"),
-                    (3, "YE", "Pin 4", "Terminal 620", "CAN High (Bus 1)"),
-                    (4, "GN", "Pin 3", "Terminal 621", "CAN Low (Bus 1)"),
+                    (3, "YE", "Pin 3", "Terminal 621", "CAN Low (Bus 1)"),
+                    (4, "GN", "Pin 4", "Terminal 620", "CAN High (Bus 1)"),
                 ],
             }
         ],
     },
     {
         "order": 3,
+        "device_ref": "U207",
         "part_number": "EEA14709",
         "description": "Knuckleboom Angle Sensor",
         "classification": "Analogue Sensor",
@@ -90,14 +93,15 @@ DEVICES = [
                 "wires": [
                     (1, "RD", "Pin 1", "Terminal 160", "Supply +Vs"),
                     (2, "BU", "Pin 2", "Terminal 800", "Ground 0 V"),
-                    (3, "YE", "Pin 4", "Terminal 628 (via W25)", "CAN High (Bus 0)"),
-                    (4, "GN", "Pin 3", "Terminal 629 (via W25)", "CAN Low (Bus 0)"),
+                    (3, "YE", "Pin 3", "Terminal 629 (via W25)", "CAN Low (Bus 0)"),
+                    (4, "GN", "Pin 4", "Terminal 628 (via W25)", "CAN High (Bus 0)"),
                 ],
             }
         ],
     },
     {
         "order": 4,
+        "device_ref": "U409",
         "part_number": "EEA18779",
         "description": "Pressure Sensor — Piston Side",
         "classification": "Analogue Sensor",
@@ -116,16 +120,18 @@ DEVICES = [
                 "junction_box_ref": "Junction Box (XX3) → location XX4",
                 "notes": "Resistor R2 across terminals 628 and 629. Piston-side cylinder pressure.",
                 "wires": [
-                    (1, "BN", "Pin 1", "Terminal 160", "Supply +Ub"),
-                    (2, "BU", "Pin 3", "Terminal 800", "Ground 0 V"),
-                    (3, "WH", "Pin 2", "Terminal 103", "Signal 1 — 4–20 mA (C70 Pin 26)"),
-                    (4, "BK", "Pin 4", "Terminal 104", "Signal 2 — 20–4 mA (C70 Pin 40)"),
+                    (1, "BN",     "Pin 1", "Terminal 160", "Supply +Ub"),
+                    (2, "WH",     "Pin 2", "Terminal 103", "Signal 1 — 4–20 mA (C70 Pin 26)"),
+                    (3, "BU",     "Pin 3", "Terminal 800", "Ground 0 V"),
+                    (4, "BK",     "Pin 4", "Terminal 104", "Signal 2 — 20–4 mA (C70 Pin 40)"),
+                    (5, "Screen", "—",     "PE Terminal",  "Terminate screen on PE-Terminal"),
                 ],
             }
         ],
     },
     {
         "order": 5,
+        "device_ref": "U411",
         "part_number": "EEA18779",
         "description": "Pressure Sensor — Rod Side",
         "classification": "Analogue Sensor",
@@ -144,16 +150,18 @@ DEVICES = [
                 "junction_box_ref": "Junction Box (XX3) → location XX4",
                 "notes": "Rod-side cylinder pressure. Paired with W409 for differential load calculation.",
                 "wires": [
-                    (1, "BN", "Pin 1", "Terminal 160", "Supply +Ub"),
-                    (2, "BU", "Pin 3", "Terminal 800", "Ground 0 V"),
-                    (3, "WH", "Pin 2", "Terminal 105", "Signal 1 — 4–20 mA (C70 Pin 25)"),
-                    (4, "BK", "Pin 4", "Terminal 106", "Signal 2 — 20–4 mA (C70 Pin 39)"),
+                    (1, "BN",     "Pin 1", "Terminal 160", "Supply +Ub"),
+                    (2, "WH",     "Pin 2", "Terminal 105", "Signal 1 — 4–20 mA (C70 Pin 25)"),
+                    (3, "BU",     "Pin 3", "Terminal 800", "Ground 0 V"),
+                    (4, "BK",     "Pin 4", "Terminal 106", "Signal 2 — 20–4 mA (C70 Pin 39)"),
+                    (5, "Screen", "—",     "PE Terminal",  "Terminate screen on PE-Terminal"),
                 ],
             }
         ],
     },
     {
         "order": 6,
+        "device_ref": "B9",
         "part_number": "EEA12214",
         "description": "Winch Overload Switch",
         "classification": "Binary Sensor",
@@ -172,17 +180,18 @@ DEVICES = [
                 "junction_box_ref": "Junction Box (XX4)",
                 "notes": "Screened cable. Screen connected to PE terminal.",
                 "wires": [
-                    (1, "BN", "Pin 1", "Terminal 160", "Supply +Ub"),
-                    (2, "BU", "Pin 3", "Terminal 800", "Ground 0 V"),
-                    (3, "BK", "Pin 4", "Terminal 109", "Signal NO contact (C71 Pin 26)"),
-                    (4, "WH", "Pin 2", "Terminal 140", "Signal NC contact (C71 Pin 40)"),
-                    (5, "Screen", "—", "PE Terminal", "Cable screen / earth"),
+                    (1, "BN",     "Pin 1", "Terminal 160", "Supply +Ub"),
+                    (2, "WH",     "Pin 2", "Terminal 140", "Signal NC contact (C71 Pin 40)"),
+                    (3, "BU",     "Pin 3", "Terminal 800", "Ground 0 V"),
+                    (4, "BK",     "Pin 4", "Terminal 109", "Signal NO contact (C71 Pin 26)"),
+                    (5, "Screen", "—",     "PE Terminal",  "Cable screen / earth"),
                 ],
             }
         ],
     },
     {
         "order": 7,
+        "device_ref": "Y190",
         "part_number": "EEA15740",
         "description": "Return Oil Utilization Valve",
         "classification": "Electromechanical Device",
@@ -209,6 +218,7 @@ DEVICES = [
     },
     {
         "order": 8,
+        "device_ref": "H113",
         "part_number": "EEA17497",
         "description": "Flashlight (LED Strobe Beacon)",
         "classification": "Electrically Powered Equipment (Lighting)",
@@ -241,6 +251,7 @@ DEVICES = [
     },
     {
         "order": 9,
+        "device_ref": "H170",
         "part_number": "EEA13611",
         "description": "Floodlight 1",
         "classification": "Electrically Powered Equipment (Lighting)",
@@ -268,6 +279,7 @@ DEVICES = [
     },
     {
         "order": 10,
+        "device_ref": "H171",
         "part_number": "EEA13611",
         "description": "Floodlight 2",
         "classification": "Electrically Powered Equipment (Lighting)",
@@ -295,6 +307,7 @@ DEVICES = [
     },
     {
         "order": 11,
+        "device_ref": "H172",
         "part_number": "EEA11854",
         "description": "Working Light",
         "classification": "Electrically Powered Equipment (Lighting)",
@@ -331,6 +344,7 @@ DEVICES = [
     },
     {
         "order": 12,
+        "device_ref": "U900",
         "part_number": "EEA15360",
         "description": "Telematic Unit CS100 IoT Gateway",
         "classification": "Communication Device / Analogue Processor",
@@ -355,14 +369,19 @@ DEVICES = [
                 "wires": [
                     (1, "BU", "Pin 1", "Terminal 800",   "Ground 0 V"),
                     (2, "RD", "Pin 2", "Fuse 900",       "Supply +V (fused)"),
-                    (3, "YE", "Pin 3", "Terminal 621",   "CAN1 High"),
-                    (4, "GN", "Pin 4", "Terminal 620",   "CAN1 Low"),
+                    (3, "GN", "Pin 3", "Terminal 621",   "CAN1 High"),
+                    (4, "YE", "Pin 4", "Terminal 620",   "CAN1 Low"),
+                    (5, "—",  "Pin 5", "Blind",           "Unused — blind heat shrink"),
+                    (6, "—",  "Pin 6", "Blind",           "Unused — blind heat shrink"),
+                    (7, "—",  "Pin 7", "Blind",           "Unused — blind heat shrink"),
+                    (8, "—",  "Pin 8", "Blind",           "Unused — blind heat shrink"),
                 ],
             }
         ],
     },
     {
         "order": 13,
+        "device_ref": "SRU1",
         "part_number": "CPEE0508A",
         "description": "Slip Ring Unit",
         "classification": "Auxiliary Device",
@@ -396,6 +415,7 @@ DEVICES = [
     },
     {
         "order": 14,
+        "device_ref": "Y0",
         "part_number": "EEA 773",
         "description": "Emergency Stop Valve Plug (Y0)",
         "classification": "Safety Control Device",
@@ -428,6 +448,7 @@ DEVICES = [
     },
     {
         "order": 15,
+        "device_ref": "H5",
         "part_number": "EEA6193",
         "description": "Overload Horn (H5)",
         "classification": "Binary Device (Acoustic)",
@@ -454,6 +475,7 @@ DEVICES = [
     },
     {
         "order": 16,
+        "device_ref": "H6",
         "part_number": "EEA6194",
         "description": "Warning Horn (H6)",
         "classification": "Binary Device (Acoustic)",
@@ -480,6 +502,7 @@ DEVICES = [
     },
     {
         "order": 17,
+        "device_ref": "B310",
         "part_number": "—",
         "description": "Slewing Monitoring Switch",
         "classification": "Binary Sensor",
@@ -508,6 +531,7 @@ DEVICES = [
     },
     {
         "order": 18,
+        "device_ref": "B312",
         "part_number": "—",
         "description": "Mainboom Monitoring Switch",
         "classification": "Binary Sensor",
@@ -536,6 +560,7 @@ DEVICES = [
     },
     {
         "order": 19,
+        "device_ref": "B314",
         "part_number": "—",
         "description": "Knuckleboom Monitoring Switch",
         "classification": "Binary Sensor",
@@ -564,6 +589,7 @@ DEVICES = [
     },
     {
         "order": 20,
+        "device_ref": "B316",
         "part_number": "—",
         "description": "Extension Monitoring Switch",
         "classification": "Binary Sensor",
@@ -592,6 +618,7 @@ DEVICES = [
     },
     {
         "order": 21,
+        "device_ref": "B318",
         "part_number": "—",
         "description": "Winch Monitoring Switch",
         "classification": "Binary Sensor",
@@ -642,15 +669,16 @@ class Command(BaseCommand):
             device, created = PFM2100Device.objects.update_or_create(
                 order=d["order"],
                 defaults={
-                    "part_number":          d["part_number"] if d["part_number"] != "—" else "",
-                    "description":          d["description"],
-                    "classification":       d["classification"],
-                    "designation":          d["designation"],
-                    "type_function":        d["type_function"],
-                    "signal_form":          d["signal_form"],
-                    "details":              d["details"],
-                    "classification_notes": d["classification_notes"],
-                    "connector_type":       d["connector_type"] if d["connector_type"] != "—" else "",
+                    "device_ref":            d.get("device_ref", ""),
+                    "part_number":           d["part_number"] if d["part_number"] != "—" else "",
+                    "description":           d["description"],
+                    "classification":        d["classification"],
+                    "designation":           d["designation"],
+                    "type_function":         d["type_function"],
+                    "signal_form":           d["signal_form"],
+                    "details":               d["details"],
+                    "classification_notes":  d["classification_notes"],
+                    "connector_type":        d["connector_type"] if d["connector_type"] != "—" else "",
                     "connector_part_number": d["connector_part_number"] if d["connector_part_number"] != "—" else "",
                 },
             )

@@ -40,6 +40,10 @@
     <table class="spec-table">
       <tbody>
         <tr>
+          <td>Device Ref</td>
+          <td><code style="color:var(--pal-orange);font-weight:700;">{{ device.device_ref|default:"—" }}</code></td>
+        </tr>
+        <tr>
           <td>Part Number</td>
           <td><code>{% if device.part_number and device.part_number != '_' %}{{ device.part_number }}{% else %}—{% endif %}</code></td>
         </tr>
@@ -165,10 +169,52 @@
     <div class="scheme-wrap">
       <div class="diag-label">Wiring Diagram</div>
       <div class="wiring-scheme"
-           data-wires='[{% for w in cable.wires.all %}{"pin":"{{ w.device_pin|escapejs }}","color":"{{ w.wire_color|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+           data-wires='[{% for w in cable.wires.all %}{"pin":"{{ w.device_pin|escapejs }}","color":"{{ w.wire_color|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}","notes":"{{ w.notes|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
       </div>
     </div>
 
+  </div>
+
+  <!-- ── EPLAN Interactive Wiring Diagram ── -->
+  <div class="eplan-section" style="margin-top:20px;">
+    <div class="diag-label">EPLAN-Style Wiring Diagram</div>
+    <div class="eplan-container" style="display:flex;gap:20px;align-items:flex-start;">
+      <canvas class="eplan-canvas"
+              data-cable="{{ cable.cable_id|escapejs }}"
+              data-ref="{{ device.device_ref|escapejs }}"
+              data-desc="{{ device.description|escapejs }}"
+              data-cls="{{ device.classification|escapejs }}"
+              data-jb="{{ cable.junction_box_ref|escapejs }}"
+              data-len="{{ cable.length_mm|escapejs }}"
+              data-part="{{ cable.cable_part_number|escapejs }}"
+              data-wires='[{% for w in cable.wires.all %}{"pin":"{{ w.device_pin|escapejs }}","color":"{{ w.wire_color|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}","notes":"{{ w.notes|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'
+              style="border:1px solid var(--pal-border);border-radius:var(--radius);background:#0A0C10;">
+      </canvas>
+      <div class="eplan-info" style="flex:0 0 200px;">
+        <div class="eplan-info-label">Wire Details</div>
+        <div class="eplan-info-empty" style="padding:20px 10px;text-align:center;color:var(--pal-gray-500);font-size:.78rem;">
+          Hover over a wire to view details
+        </div>
+        <div class="eplan-info-content" style="display:none;">
+          <div class="eplan-info-row">
+            <div class="eplan-info-key">Color</div>
+            <div class="eplan-info-val" id="ei-color">—</div>
+          </div>
+          <div class="eplan-info-row">
+            <div class="eplan-info-key">Pin</div>
+            <div class="eplan-info-val" id="ei-pin">—</div>
+          </div>
+          <div class="eplan-info-row">
+            <div class="eplan-info-key">Terminal</div>
+            <div class="eplan-info-val" id="ei-term">—</div>
+          </div>
+          <div class="eplan-info-row">
+            <div class="eplan-info-key">Notes</div>
+            <div class="eplan-info-val" id="ei-notes" style="font-size:.75rem;color:var(--pal-gray-600);">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── Wire detail table ── -->
@@ -265,7 +311,7 @@
   font-size:.68rem; font-weight:700; text-transform:uppercase;
   letter-spacing:.7px; color:var(--pal-gray-500); margin-bottom:8px;
 }
-.connector-face { width:200px; height:200px; }
+.connector-face { min-width:200px; min-height:200px; }
 .conn-type-lbl {
   font-size:.72rem; color:var(--pal-gray-500); margin-top:4px; text-align:center;
 }
@@ -302,212 +348,365 @@
   border-radius:var(--radius); font-family:monospace; font-size:.75rem; font-weight:700;
 }
 
+/* EPLAN diagram section */
+.eplan-section { background:var(--pal-surface); padding:16px; border-radius:var(--radius); border:1px solid var(--pal-border); }
+.eplan-container { display:flex; gap:20px; align-items:flex-start; }
+.eplan-info { flex:0 0 200px; background:var(--pal-gray-100); border:1px solid var(--pal-border); border-radius:var(--radius); }
+.eplan-info-label { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--pal-gray-500); padding:10px; border-bottom:1px solid var(--pal-border); }
+.eplan-info-empty, .eplan-info-content { padding:12px; }
+.eplan-info-row { display:flex; flex-direction:column; gap:3px; padding:8px 10px; border-bottom:1px solid var(--pal-border); }
+.eplan-info-row:last-child { border-bottom:none; }
+.eplan-info-key { font-size:.68rem; font-weight:700; color:var(--pal-gray-500); text-transform:uppercase; letter-spacing:.3px; }
+.eplan-info-val { font-size:.8rem; font-weight:500; color:var(--pal-text); font-family:monospace; word-break:break-word; }
+
 @media (max-width:680px) {
   .top-row { flex-direction:column; }
   .side-panel { min-width:unset; max-width:unset; width:100%; }
   .wiring-visual { grid-template-columns:1fr; }
   .face-wrap { flex-direction:row; gap:16px; align-items:flex-start; }
+  .eplan-container { flex-direction:column; }
+  .eplan-info { flex:1 1 auto; }
 }
 </style>
 
 <script>
 (function () {
-  /* ── Wire colour palette ── */
   var HEX = {
     'BN':'#8D4E2A','BK':'#1E1E1E','BU':'#1A6FA8','WH':'#D8DCE0',
     'GN':'#1E9455','YE':'#E8B800','RD':'#B03020','GY':'#6E7880',
     'VT':'#7133A0','PK':'#C8186A','OG':'#D06418'
   };
-  /* text contrast on each color */
-  var DARK_TEXT = {'WH':1,'YE':1};
 
-  function fill(code) {
-    var c = code.toUpperCase().replace('/','');
-    if (c==='GNYE') return 'url(#gnye)';
-    if (c==='BURD') return 'url(#burd)';
-    if (c==='GYPK') return 'url(#gypk)';
-    return HEX[code.toUpperCase()] || HEX[c] || '#555';
+  function lineColor(c) {
+    var k = c.toUpperCase().replace('/','');
+    if (k==='GNYE') return '#1E9455';
+    if (k==='BURD') return '#1A6FA8';
+    if (k==='GYPK') return '#6E7880';
+    return HEX[c.toUpperCase()] || HEX[k] || '#888';
   }
+  function pinNum(str) { var m=(str||'').match(/\d+/); return m?parseInt(m[0],10):9999; }
+  function byPin(arr) { return arr.slice().sort(function(a,b){return pinNum(a.pin)-pinNum(b.pin);}); }
 
-  function lineColor(code) {
-    var c = code.toUpperCase().replace('/','');
-    if (c==='GNYE') return '#1E9455';
-    if (c==='BURD') return '#1A6FA8';
-    if (c==='GYPK') return '#6E7880';
-    return HEX[code.toUpperCase()] || HEX[c] || '#888';
-  }
-
-  /* ─────────────────────────────────────────────────
-     CONNECTOR FACE
-     Numbers outside the ring, coloured contacts inside
-  ───────────────────────────────────────────────── */
   function renderFace(el, wires, idx) {
-    var S = 200, margin = 18;
-    var total = S + margin * 2;
-    var cx = total / 2, cy = total / 2;
-    var bodyR   = S * 0.36;
-    var innerR  = S * 0.29;
-    var pinRing = S * 0.185;  /* pin placement radius */
-    var pinDot  = S * 0.065;  /* pin contact radius   */
-    var numRing = bodyR + margin * 0.90; /* number radius — just outside shell */
-
-    /* build pin→wire map */
-    var map = {}, maxP = 0;
-    wires.forEach(function(w){
-      var p = parseInt(w.pin, 10);
-      if (!isNaN(p) && p > 0) { map[p] = w; if (p > maxP) maxP = p; }
-    });
-    var n = maxP || wires.length;
-    if (n < 1) return;
-
-    var g = 'g' + idx; /* gradient id suffix */
-    var svg = '<svg width="'+total+'" height="'+total+'"'
-      + ' viewBox="0 0 '+total+' '+total+'"'
-      + ' xmlns="http://www.w3.org/2000/svg">';
-
-    /* defs */
-    svg += '<defs>'
+    var map={},maxP=0;
+    wires.forEach(function(w){var p=parseInt(w.pin,10);if(!isNaN(p)&&p>0){map[p]=w;if(p>maxP)maxP=p;}});
+    var n=maxP||wires.length; if(n<1)return;
+    var outerPad,dotFrac,lblR;
+    if     (n<=2){outerPad=48;dotFrac=0.180;lblR=0.88;}
+    else if(n<=4){outerPad=44;dotFrac=0.148;lblR=0.86;}
+    else if(n<=8){outerPad=38;dotFrac=0.103;lblR=0.84;}
+    else if(n<=16){outerPad=32;dotFrac=0.076;lblR=0.83;}
+    else         {outerPad=26;dotFrac=0.058;lblR=0.84;}
+    var S=200,total=S+outerPad*2,cx=total/2,cy=total/2;
+    var bodyR=S*0.39,innerR=S*0.31,pinRing=S*0.195,dot=S*dotFrac;
+    var labelR=bodyR+outerPad*lblR,lblSz=n<=8?10:8.5;
+    var g='g'+idx;
+    var svg='<svg width="'+total+'" height="'+total+'" viewBox="0 0 '+total+' '+total+'" xmlns="http://www.w3.org/2000/svg">';
+    svg+='<defs>'
       +'<radialGradient id="bg'+g+'"><stop offset="0%" stop-color="#4E535E"/><stop offset="100%" stop-color="#1F2228"/></radialGradient>'
       +'<linearGradient id="gnye'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#1E9455"/><stop offset="50%" stop-color="#E8B800"/></linearGradient>'
       +'<linearGradient id="burd'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#1A6FA8"/><stop offset="50%" stop-color="#B03020"/></linearGradient>'
       +'<linearGradient id="gypk'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#6E7880"/><stop offset="50%" stop-color="#C8186A"/></linearGradient>'
       +'</defs>';
-
-    /* connector shell */
-    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+bodyR+'" fill="#8E969E" stroke="#606870" stroke-width="2.5"/>';
-    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="url(#bg'+g+')"/>';
-    /* key notch at bottom */
-    svg += '<rect x="'+(cx-5)+'" y="'+(cy+bodyR-3)+'" width="10" height="10" rx="2" fill="#8E969E"/>';
-
-    /* pins */
-    for (var i = 1; i <= n; i++) {
-      var deg = -90 + (i - 1) * 360 / n;
-      var rad = deg * Math.PI / 180;
-      var px = cx + Math.cos(rad) * pinRing;
-      var py = cy + Math.sin(rad) * pinRing;
-      var nx = cx + Math.cos(rad) * numRing;
-      var ny = cy + Math.sin(rad) * numRing;
-      var w  = map[i];
-
-      /* pin hole */
-      svg += '<circle cx="'+px+'" cy="'+py+'" r="'+pinDot+'"'
-        +' fill="#0A0C0F" stroke="#404550" stroke-width="1.5"/>';
-
-      /* pin contact — wire colour if connected, dark grey otherwise */
-      if (w) {
-        var c = w.color.toUpperCase().replace('/','');
-        var f = (c==='GNYE') ? 'url(#gnye'+g+')'
-              : (c==='BURD') ? 'url(#burd'+g+')'
-              : (c==='GYPK') ? 'url(#gypk'+g+')'
-              : (HEX[w.color.toUpperCase()]||HEX[c]||'#555');
-        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinDot*0.68)+'"'
-          +' fill="'+f+'" stroke="rgba(255,255,255,.12)" stroke-width="0.8"/>';
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+bodyR+'" fill="#8E969E" stroke="#606870" stroke-width="2.5"/>';
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="url(#bg'+g+')"/>';
+    svg+='<rect x="'+(cx-6)+'" y="'+(cy+bodyR-4)+'" width="12" height="10" rx="2" fill="#8E969E"/>';
+    for(var i=1;i<=n;i++){
+      var deg=-90+(i-1)*360/n,rad=deg*Math.PI/180;
+      var px=cx+Math.cos(rad)*pinRing,py=cy+Math.sin(rad)*pinRing;
+      var lx=cx+Math.cos(rad)*labelR,ly=cy+Math.sin(rad)*labelR;
+      var w=map[i];
+      svg+='<circle cx="'+px+'" cy="'+py+'" r="'+dot+'" fill="#0A0C0F" stroke="#505660" stroke-width="1.5"/>';
+      if(w){
+        var c=w.color.toUpperCase().replace('/','');
+        var f=(c==='GNYE')?'url(#gnye'+g+')':(c==='BURD')?'url(#burd'+g+')':(c==='GYPK')?'url(#gypk'+g+')':(HEX[w.color.toUpperCase()]||HEX[c]||'#555');
+        svg+='<circle cx="'+px+'" cy="'+py+'" r="'+(dot*0.85)+'" fill="'+f+'" stroke="rgba(255,255,255,.28)" stroke-width="1"/>';
+        var dark=(c==='WH'||c==='YE'||c==='GNYE');
+        svg+='<text x="'+px+'" y="'+py+'" text-anchor="middle" dominant-baseline="middle" font-family="\'Segoe UI\',Arial,sans-serif" font-size="'+(Math.max(dot*0.72,7))+'" font-weight="900" fill="'+(dark?'#0F1F30':'#fff')+'">'+i+'</text>';
+        var lf=HEX[w.color.toUpperCase()]||HEX[c]||'#8AACCC';
+        if(c==='BK')lf='#B0B8C4';else if(c==='BN')lf='#C09060';
+        svg+='<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="middle" font-family="\'Segoe UI\',Arial,sans-serif" font-size="'+lblSz+'" font-weight="700" fill="'+lf+'">'+w.color+'</text>';
       } else {
-        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(pinDot*0.50)+'" fill="#2C3038"/>';
+        svg+='<circle cx="'+px+'" cy="'+py+'" r="'+(dot*0.52)+'" fill="#262C36"/>';
+        svg+='<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="middle" font-family="\'Segoe UI\',Arial,sans-serif" font-size="'+lblSz+'" font-weight="700" fill="#505660">'+i+'</text>';
       }
-
-      /* pin number — OUTSIDE the connector, navy, good contrast on white */
-      svg += '<text x="'+nx+'" y="'+ny+'"'
-        +' text-anchor="middle" dominant-baseline="middle"'
-        +' font-family="\'Segoe UI\',Arial,sans-serif"'
-        +' font-size="12" font-weight="700" fill="#1C3A5C">'+i+'</text>';
     }
-
-    /* center indent for ≥5-pin connectors */
-    if (n >= 5) {
-      svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(pinDot*0.6)+'"'
-        +' fill="#181A1F" stroke="#383C44" stroke-width="1"/>';
-    }
-
-    svg += '</svg>';
-    el.innerHTML = svg;
+    if(n>=5)svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(dot*0.50)+'" fill="#181A1F" stroke="#383C44" stroke-width="1"/>';
+    svg+='</svg>';
+    el.innerHTML=svg; el.style.width=total+'px'; el.style.height=total+'px';
   }
 
-  /* ─────────────────────────────────────────────────
-     WIRING SCHEME
-     Horizontal connection diagram:
-     [pin#] ──■COLOR■──────────────── Terminal.Ref
-  ───────────────────────────────────────────────── */
   function renderScheme(el, wires) {
-    if (!wires.length) return;
+    if(!wires.length)return;
+    var sorted=byPin(wires);
+    var ROW=40,PAD=10,VW=480,H=PAD*2+sorted.length*ROW;
+    var PIN_CX=22,PIN_R=15,L1=44,L2=355,LBL_X=L1+10,LBL_W=44,TERM_X=L2+10;
+    var svg='<svg width="100%" height="'+H+'" viewBox="0 0 '+VW+' '+H+'" preserveAspectRatio="xMinYMid meet" xmlns="http://www.w3.org/2000/svg" style="font-family:\'Segoe UI\',Arial,sans-serif;">';
+    svg+='<line x1="0" y1="0" x2="'+VW+'" y2="0" stroke="#D0D8E0" stroke-width="1"/>';
+    svg+='<line x1="0" y1="'+H+'" x2="'+VW+'" y2="'+H+'" stroke="#D0D8E0" stroke-width="1"/>';
+    sorted.forEach(function(w,i){
+      var y=PAD+i*ROW+ROW/2,lc=lineColor(w.color);
+      if(i%2===0)svg+='<rect x="0" y="'+(PAD+i*ROW)+'" width="'+VW+'" height="'+ROW+'" fill="#F4F7FA"/>';
+      svg+='<circle cx="'+PIN_CX+'" cy="'+y+'" r="'+PIN_R+'" fill="#1C3A5C"/>';
+      svg+='<text x="'+PIN_CX+'" y="'+y+'" text-anchor="middle" dominant-baseline="middle" font-size="10" font-weight="800" fill="white">'+(w.pin||'?')+'</text>';
+      svg+='<line x1="'+(PIN_CX+PIN_R)+'" y1="'+y+'" x2="'+L2+'" y2="'+y+'" stroke="'+lc+'" stroke-width="5" stroke-linecap="round"/>';
+      svg+='<rect x="'+LBL_X+'" y="'+(y-11)+'" width="'+LBL_W+'" height="22" rx="4" fill="white" stroke="#C8CDD2" stroke-width="1"/>';
+      svg+='<text x="'+(LBL_X+LBL_W/2)+'" y="'+y+'" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="900" fill="#222">'+w.color+'</text>';
+      svg+='<text x="'+TERM_X+'" y="'+y+'" dominant-baseline="middle" font-size="9.5" font-weight="600" fill="#1C3A5C" font-family="\'Courier New\',monospace">'+(w.terminal||'—')+'</text>';
+      if(i<sorted.length-1)svg+='<line x1="0" y1="'+(PAD+(i+1)*ROW)+'" x2="'+VW+'" y2="'+(PAD+(i+1)*ROW)+'" stroke="#DDE1E7" stroke-width="0.7"/>';
+    });
+    svg+='</svg>'; el.innerHTML=svg;
+  }
 
-    var ROW = 38, PAD = 10;
-    var VW = 460, H = PAD * 2 + wires.length * ROW;
+  /* EPLAN interactive diagram */
+  function renderEplan(canvas, cfg) {
+    var wires  = (cfg.wires || []).slice().sort(function(a,b){ return pinNum(a.pin)-pinNum(b.pin); });
+    var nW     = wires.length || 1;
+    var DPR    = window.devicePixelRatio || 1;
 
-    /* layout x positions */
-    var PIN_CX = 18;
-    var L1 = 36, L2 = 340;   /* wire line start/end */
-    var LABEL_X = L1 + 8;    /* colour label start  */
-    var LABEL_W = 40;
-    var TERM_X  = L2 + 8;    /* terminal text       */
+    var WP     = 52;
+    var PAD    = 40;
+    var TOP_H  = 180;
+    var BUS_H  = 18;
+    var RUN_H  = 260;
+    var BOX_H  = 80;
+    var LBL_H  = 130;
+    var H      = TOP_H + BUS_H + RUN_H + BOX_H + LBL_H;
+    var W      = Math.max(nW * WP + PAD * 2, 260);
 
-    var svg = '<svg width="100%" height="'+H+'" viewBox="0 0 '+VW+' '+H+'"'
-      +' preserveAspectRatio="xMinYMid meet"'
-      +' xmlns="http://www.w3.org/2000/svg"'
-      +' style="font-family:\'Segoe UI\',Arial,sans-serif;">';
+    canvas.width        = W * DPR;
+    canvas.height       = H * DPR;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
 
-    /* top & bottom border lines */
-    svg += '<line x1="0" y1="0" x2="'+VW+'" y2="0" stroke="#E0E0E0" stroke-width="1"/>';
-    svg += '<line x1="0" y1="'+H+'" x2="'+VW+'" y2="'+H+'" stroke="#E0E0E0" stroke-width="1"/>';
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-    wires.forEach(function (w, i) {
-      var y = PAD + i * ROW + ROW / 2;
-      var lc = lineColor(w.color);
+    var C = {
+      bg:        '#0A0C10',
+      bus:       '#1A70EE',
+      busEdge:   '#4598FF',
+      cable:     '#FFFF44',
+      devBox:    '#FFFF44',
+      devRef:    '#00FF44',
+      term:      '#FFFF88',
+      blind:     '#555555',
+      blindTx:   '#777788',
+      pin:       '#FFFF44',
+      pinTx:     '#000000',
+      wireHi:    '#FF44FF',
+      wireHiLine:'#FF88FF',
+      length:    '#88BBDD',
+      jb:        '#6688CC',
+    };
+    var MONO = "'Courier New',monospace";
+    var SANS = "'Segoe UI',Arial,sans-serif";
 
-      /* alternating row tint */
-      if (i % 2 === 0) {
-        svg += '<rect x="0" y="'+(PAD+i*ROW)+'" width="'+VW+'" height="'+ROW+'" fill="#F5F7FA"/>';
+    var busY    = TOP_H;
+    var wireY0  = busY + BUS_H + 10;
+    var wireY1  = busY + BUS_H + RUN_H;
+    var boxY    = wireY1;
+    var lblY    = boxY + BOX_H;
+    var cx      = W / 2;
+    function wx(i){ return PAD + i * WP + WP / 2; }
+
+    var wireHits = [];
+
+    function draw(hoveredIdx) {
+      ctx.fillStyle = C.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      wires.forEach(function(w, i) {
+        var x       = wx(i);
+        var isBlind = (!w.terminal || w.terminal === 'Blind' || w.terminal === '—' || w.color === '—' || w.color === '');
+        var col     = isBlind ? C.blind : (HEX[w.color.toUpperCase()] || HEX[(w.color.toUpperCase().replace('/','' ))] || '#888888');
+
+        if (isBlind) col = C.blind;
+
+        ctx.strokeStyle = isBlind ? C.blind : col;
+        ctx.lineWidth   = isBlind ? 1 : 2;
+        if (isBlind) ctx.setLineDash([3,3]);
+        ctx.beginPath();
+        ctx.moveTo(x, busY);
+        ctx.lineTo(x, wireY0);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      ctx.strokeStyle = C.bus;
+      ctx.lineWidth   = 2;
+      ctx.beginPath();
+      ctx.moveTo(PAD-10, busY);
+      ctx.lineTo(W-PAD+10, busY);
+      ctx.stroke();
+
+      wires.forEach(function(w, i) {
+        var x = wx(i);
+        var isBlind = (!w.color || w.color === '—' || w.pin === 'Blind');
+        var col = isBlind ? C.blind : (HEX[w.color.toUpperCase()] || '#888');
+        ctx.fillStyle = col;
+        ctx.strokeStyle = C.bg;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(x, busY, 4, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      wires.forEach(function(w, i) {
+        var x = wx(i);
+        ctx.strokeStyle = (hoveredIdx === i) ? C.wireHiLine : C.cable;
+        ctx.lineWidth   = (hoveredIdx === i) ? 2.4 : 1.8;
+        if (hoveredIdx === i) ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(x, wireY0);
+        ctx.lineTo(x, boxY);
+        ctx.stroke();
+        if (hoveredIdx === i) ctx.setLineDash([]);
+      });
+
+      wireHits = [];
+      wires.forEach(function(w, i) {
+        var x = wx(i);
+        wireHits.push({ idx: i, x: x, minX: x - WP/3, maxX: x + WP/3, minY: wireY0 - 20, maxY: boxY + 20 });
+      });
+
+      ctx.strokeStyle = C.devBox;
+      ctx.lineWidth   = 1.8;
+      ctx.strokeRect(4, boxY, W-8, BOX_H);
+
+      var PIN_R = Math.min(10, WP * 0.38);
+      wires.forEach(function(w, i) {
+        var x       = wx(i);
+        var isBlind = (!w.color || w.color === '—' || w.pin === 'Blind');
+
+        ctx.fillStyle   = isBlind ? C.blind : C.pin;
+        ctx.strokeStyle = C.bg;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath(); ctx.arc(x, boxY, PIN_R, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+
+        var pn  = (w.pin||'').replace(/[^\d]/g,'').slice(-2) || (isBlind ? '' : String(i+1));
+        if (pn) {
+          ctx.fillStyle = isBlind ? C.blindTx : C.pinTx;
+          ctx.font      = 'bold ' + (pn.length > 2 ? '6' : '8') + 'px ' + MONO;
+          ctx.textAlign = 'center';
+          ctx.fillText(pn, x, boxY + 3);
+        }
+      });
+
+      var ly = lblY + 13;
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = '#FFFFAA';
+      ctx.font      = 'bold 8px ' + MONO;
+      ctx.fillText('+SS', cx, ly); ly += 12;
+
+      ctx.fillStyle = C.cable;
+      ctx.font      = 'bold 11px ' + MONO;
+      ctx.fillText('−' + (cfg.ref || cfg.cable_id), cx, ly); ly += 13;
+
+      var words = (cfg.desc || '').split(' ');
+      var line = '', maxW = W - 8;
+      ctx.fillStyle = '#00DD44';
+      ctx.font      = '8.5px ' + SANS;
+      words.forEach(function(word){
+        var test = line ? line+' '+word : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          ctx.fillText(line, cx, ly); ly += 11; line = word;
+        } else { line = test; }
+      });
+      if (line) { ctx.fillText(line, cx, ly); ly += 11; }
+
+      if (cfg.len && +cfg.len > 0) {
+        ctx.fillStyle = C.length;
+        ctx.font      = '8px ' + MONO;
+        ctx.fillText(cfg.len + ' mm', cx, ly); ly += 10;
+      }
+      if (cfg.part) {
+        ctx.fillStyle = '#668899';
+        ctx.font      = '7.5px ' + MONO;
+        ctx.fillText(cfg.part, cx, ly);
+      }
+    }
+
+    draw(-1);
+
+    canvas.addEventListener('mousemove', function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      var hoveredIdx = -1;
+
+      for (var i = 0; i < wireHits.length; i++) {
+        var hit = wireHits[i];
+        if (x >= hit.minX && x <= hit.maxX && y >= hit.minY && y <= hit.maxY) {
+          hoveredIdx = i;
+          break;
+        }
       }
 
-      /* pin circle */
-      svg += '<circle cx="'+PIN_CX+'" cy="'+y+'" r="13" fill="#1C3A5C"/>';
-      svg += '<text x="'+PIN_CX+'" y="'+y+'"'
-        +' text-anchor="middle" dominant-baseline="middle"'
-        +' font-size="9.5" font-weight="700" fill="white">'+(w.pin||'?')+'</text>';
-
-      /* coloured wire line */
-      svg += '<line x1="'+L1+'" y1="'+y+'" x2="'+L2+'" y2="'+y+'"'
-        +' stroke="'+lc+'" stroke-width="5.5" stroke-linecap="round"/>';
-
-      /* white pill label showing colour code */
-      svg += '<rect x="'+LABEL_X+'" y="'+(y-10)+'" width="'+LABEL_W+'" height="20" rx="3"'
-        +' fill="white" stroke="#C8CDD2" stroke-width="0.9"/>';
-      svg += '<text x="'+(LABEL_X+LABEL_W/2)+'" y="'+y+'"'
-        +' text-anchor="middle" dominant-baseline="middle"'
-        +' font-size="8.5" font-weight="800" fill="#222">'+w.color+'</text>';
-
-      /* terminal reference */
-      svg += '<text x="'+TERM_X+'" y="'+y+'"'
-        +' dominant-baseline="middle"'
-        +' font-size="9" font-weight="600" fill="#1C3A5C"'
-        +' font-family="\'Courier New\',monospace">'+(w.terminal||'—')+'</text>';
-
-      /* row separator */
-      if (i < wires.length - 1) {
-        svg += '<line x1="0" y1="'+(PAD+(i+1)*ROW)+'" x2="'+VW+'" y2="'+(PAD+(i+1)*ROW)+'"'
-          +' stroke="#DDE1E7" stroke-width="0.7"/>';
+      if (hoveredIdx !== -1) {
+        canvas.style.cursor = 'pointer';
+        draw(hoveredIdx);
+        updateInfoPanel(wires[hoveredIdx]);
+      } else {
+        canvas.style.cursor = 'default';
+        draw(-1);
+        hideInfoPanel();
       }
     });
 
-    svg += '</svg>';
-    el.innerHTML = svg;
+    canvas.addEventListener('mouseleave', function() {
+      draw(-1);
+      hideInfoPanel();
+      canvas.style.cursor = 'default';
+    });
+
+    function updateInfoPanel(wire) {
+      var infoContent = canvas.parentElement.querySelector('.eplan-info-content');
+      var infoEmpty   = canvas.parentElement.querySelector('.eplan-info-empty');
+      if (!infoContent || !infoEmpty) return;
+
+      infoContent.style.display = 'block';
+      infoEmpty.style.display   = 'none';
+
+      var color = wire.color || '—';
+      var pin   = wire.pin || '—';
+      var term  = wire.terminal || '—';
+      var notes = wire.notes || '';
+
+      var colorEl = canvas.parentElement.querySelector('#ei-color');
+      var pinEl   = canvas.parentElement.querySelector('#ei-pin');
+      var termEl  = canvas.parentElement.querySelector('#ei-term');
+      var notesEl = canvas.parentElement.querySelector('#ei-notes');
+
+      if (colorEl) colorEl.textContent = color;
+      if (pinEl)   pinEl.textContent   = pin;
+      if (termEl)  termEl.textContent  = term;
+      if (notesEl) notesEl.textContent = notes || '(no notes)';
+    }
+
+    function hideInfoPanel() {
+      var infoContent = canvas.parentElement.querySelector('.eplan-info-content');
+      var infoEmpty   = canvas.parentElement.querySelector('.eplan-info-empty');
+      if (infoContent) infoContent.style.display = 'none';
+      if (infoEmpty)   infoEmpty.style.display   = 'block';
+    }
   }
 
-  /* ── Init ── */
   document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.connector-face').forEach(function (el) {
       try {
-        var wires = JSON.parse(el.dataset.wires || '[]');
-        var idx   = el.dataset.idx || '0';
-        if (wires.length) renderFace(el, wires, idx);
-      } catch (e) { console.warn('face error', e); }
+        var w=JSON.parse(el.dataset.wires||'[]');
+        if(w.length) renderFace(el,w,el.dataset.idx||'0');
+      } catch(e){console.warn('face',e);}
     });
-
     document.querySelectorAll('.wiring-scheme').forEach(function (el) {
       try {
-        var wires = JSON.parse(el.dataset.wires || '[]');
-        if (wires.length) renderScheme(el, wires);
-      } catch (e) { console.warn('scheme error', e); }
+        var w=JSON.parse(el.dataset.wires||'[]');
+        if(w.length) renderScheme(el,w);
+      } catch(e){console.warn('scheme',e);
     });
   });
 })();

@@ -556,10 +556,59 @@
         <a href="{% url 'pfm2100:device_detail' dev.pk %}"
            class="sidebar-item {% if request.resolver_match.url_name == 'device_detail' and request.resolver_match.kwargs.pk == dev.pk %}active{% endif %}"
            title="{{ dev.description }}">
-          {% if dev.part_number and dev.part_number != '_' %}
+          {% if dev.device_ref %}
+            <span class="item-code">{{ dev.device_ref }}</span>
+          {% elif dev.part_number and dev.part_number != '_' %}
             <span class="item-code">{{ dev.part_number }}</span>
           {% endif %}
-          {{ dev.description|truncatechars:30 }}
+          {{ dev.description|truncatechars:28 }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endwith %}
+
+
+      <!-- PFM1200 toggle -->
+      {% with is_pfm1200_active=request.resolver_match.app_name %}
+      <button class="sidebar-group sidebar-toggle"
+              id="pfm1200-toggle"
+              aria-expanded="{% if is_pfm1200_active == 'pfm1200' %}true{% else %}false{% endif %}"
+              onclick="toggleSidebarGroup('pfm1200-devices', this)">
+        <span class="dot" style="background:#2EA85A;"></span>
+        PFM1200
+        <svg class="toggle-chevron" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"
+             style="width:12px;height:12px;margin-left:auto;transition:transform .2s;flex-shrink:0;">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div id="pfm1200-devices"
+           style="{% if is_pfm1200_active != 'pfm1200' %}display:none;{% endif %}">
+        <a href="{% url 'pfm1200:wiring_diagram' %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'wiring_diagram' %}active{% endif %}"
+           style="font-weight:{% if request.resolver_match.url_name == 'wiring_diagram' %}700{% else %}600{% endif %};">
+          ⚡ Wiring Diagram
+        </a>
+        <a href="{% url 'pfm1200:schematic' %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'schematic' and is_pfm1200_active == 'pfm1200' %}active{% endif %}"
+           style="font-weight:{% if request.resolver_match.url_name == 'schematic' and is_pfm1200_active == 'pfm1200' %}700{% else %}600{% endif %};">
+          ◈ System Schematic
+        </a>
+        <a href="{% url 'pfm1200:device_list' %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'device_list' and is_pfm1200_active == 'pfm1200' %}active{% endif %}">
+          All Devices
+        </a>
+        <div class="sidebar-section-label" style="padding-top:8px;padding-bottom:2px;">Devices</div>
+        {% for dev in nav_pfm1200_devices %}
+        <a href="{% url 'pfm1200:device_detail' dev.order %}"
+           class="sidebar-item {% if request.resolver_match.url_name == 'device_detail' and is_pfm1200_active == 'pfm1200' and request.resolver_match.kwargs.order == dev.order %}active{% endif %}"
+           title="{{ dev.description }}">
+          {% if dev.device_ref %}
+            <span class="item-code">{{ dev.device_ref }}</span>
+          {% elif dev.part_number and dev.part_number != '_' %}
+            <span class="item-code">{{ dev.part_number }}</span>
+          {% endif %}
+          {{ dev.description|truncatechars:28 }}
         </a>
         {% endfor %}
       </div>

@@ -13,7 +13,7 @@ Targets engineers and technicians who need pin-level electrical reference for th
 | Language | Python 3.13 |
 | Database | SQLite (dev) |
 | Frontend | Server-rendered HTML/CSS — dark GitHub-style theme |
-| Dev server | `py manage.py runserver 8001` |
+| Dev server | `py manage.py runserver 8002` |
 
 ---
 

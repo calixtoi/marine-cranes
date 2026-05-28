@@ -1,20 +1,20 @@
 from django.contrib import admin
-from .models import PFM2100Device, PFM2100Cable, PFM2100WireTerminal
+from .models import PFM1200Device, PFM1200Cable, PFM1200WireTerminal
 
 
 class WireTerminalInline(admin.TabularInline):
-    model = PFM2100WireTerminal
+    model = PFM1200WireTerminal
     extra = 0
 
 
 class CableInline(admin.StackedInline):
-    model = PFM2100Cable
+    model = PFM1200Cable
     extra = 0
     show_change_link = True
 
 
-@admin.register(PFM2100Device)
-class PFM2100DeviceAdmin(admin.ModelAdmin):
+@admin.register(PFM1200Device)
+class PFM1200DeviceAdmin(admin.ModelAdmin):
     list_display = ('order', 'device_ref', 'part_number', 'description', 'classification', 'connector_type', 'has_image', 'has_datasheet')
     list_display_links = ('device_ref', 'part_number', 'description')
     list_editable = ('order',)
@@ -27,8 +27,6 @@ class PFM2100DeviceAdmin(admin.ModelAdmin):
         }),
         ('Media & Documentation', {
             'fields': ('image', 'datasheet', 'datasheet_url'),
-            'description': 'Upload a device photo (JPG/PNG) and/or a datasheet PDF. '
-                           'An external URL can be used instead of or alongside the uploaded file.',
         }),
     )
 
@@ -41,12 +39,12 @@ class PFM2100DeviceAdmin(admin.ModelAdmin):
         return bool(obj.datasheet or obj.datasheet_url)
 
 
-@admin.register(PFM2100Cable)
-class PFM2100CableAdmin(admin.ModelAdmin):
-    list_display = ('cable_id', 'cable_part_number', 'connection_details', 'junction_box_ref', 'device')
+@admin.register(PFM1200Cable)
+class PFM1200CableAdmin(admin.ModelAdmin):
+    list_display = ('cable_id', 'cable_part_number', 'connection_details', 'length_mm', 'junction_box_ref', 'device')
     inlines = [WireTerminalInline]
 
 
-@admin.register(PFM2100WireTerminal)
+@admin.register(PFM1200WireTerminal)
 class WireTerminalAdmin(admin.ModelAdmin):
     list_display = ('wire_color', 'device_pin', 'terminal_ref', 'cable', 'notes')

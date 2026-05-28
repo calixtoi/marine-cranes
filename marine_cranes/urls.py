@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('pal40.urls')),
     path('pfm2100/', include('pfm2100.urls')),
+    path('pfm1200/', include('pfm1200.urls')),
 ]
 
 if settings.DEBUG:

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'pal40',
     'pfm2100',
+    'pfm1200',
 ]
 
 MIDDLEWARE = [

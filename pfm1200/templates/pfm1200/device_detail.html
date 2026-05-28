@@ -1,0 +1,951 @@
+{% extends "pal40/base.html" %}
+{% block title %}{{ device.description }} — PFM1200{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb">
+  <a href="{% url 'pal40:index' %}">Home</a>
+  <span class="sep">/</span>
+  <a href="{% url 'pfm1200:device_list' %}">PFM1200</a>
+  <span class="sep">/</span>
+  {{ device.description }}
+</nav>
+{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    {% if device.part_number and device.part_number != '_' %}
+      <div style="font-family:monospace;font-size:.78rem;color:var(--pal-orange);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">{{ device.part_number }}</div>
+    {% endif %}
+    <h1>{{ device.description }}</h1>
+    <div class="ph-sub">{{ device.classification }}</div>
+  </div>
+  <a href="{% url 'admin:pfm1200_pfm1200device_change' device.pk %}"
+     class="edit-btn" title="Edit in Admin">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+    Edit / Upload
+  </a>
+</div>
+
+<!-- Top row: specs + photo/datasheet -->
+<div class="top-row">
+
+  <div class="card card-accent" style="margin-bottom:0;flex:1;">
+    <div class="card-header"><h2>Device Specifications</h2></div>
+    <table class="spec-table">
+      <tbody>
+        <tr>
+          <td>Device Ref</td>
+          <td><code style="color:var(--pal-orange);font-weight:700;">{{ device.device_ref|default:"—" }}</code></td>
+        </tr>
+        <tr>
+          <td>Part Number</td>
+          <td><code>{% if device.part_number and device.part_number != '_' %}{{ device.part_number }}{% else %}—{% endif %}</code></td>
+        </tr>
+        <tr><td>Description</td><td>{{ device.description }}</td></tr>
+        <tr>
+          <td>Classification</td>
+          <td>
+            {% if 'Analogue' in device.classification %}<span class="badge badge-AI">Analogue Sensor</span>
+            {% elif 'Binary Sensor' in device.classification %}<span class="badge badge-DI">Binary Sensor</span>
+            {% elif 'Lighting' in device.classification %}<span class="badge badge-DO">Lighting</span>
+            {% elif 'Communication' in device.classification %}<span class="badge badge-CAN">Communication</span>
+            {% elif 'Safety' in device.classification %}<span class="badge badge-safety">Safety</span>
+            {% elif 'Acoustic' in device.classification %}<span class="badge badge-DO">Acoustic</span>
+            {% elif 'Electromech' in device.classification %}<span class="badge badge-DO">Electromechanical</span>
+            {% else %}{{ device.classification }}{% endif %}
+          </td>
+        </tr>
+        <tr><td>Designation</td><td style="white-space:pre-wrap;">{{ device.designation }}</td></tr>
+        <tr><td>Type / Function</td><td style="white-space:pre-wrap;">{{ device.type_function }}</td></tr>
+        <tr><td>Signal Form</td><td style="white-space:pre-wrap;">{{ device.signal_form }}</td></tr>
+        {% if device.details and device.details != '_' %}
+        <tr><td>Details</td><td style="white-space:pre-wrap;font-size:.83rem;">{{ device.details }}</td></tr>
+        {% endif %}
+        {% if device.classification_notes %}
+        <tr><td>Class. Notes</td><td style="font-size:.83rem;">{{ device.classification_notes }}</td></tr>
+        {% endif %}
+        <tr><td>Connector Type</td><td><code>{% if device.connector_type and device.connector_type != '_' %}{{ device.connector_type }}{% else %}—{% endif %}</code></td></tr>
+        <tr><td>Connector Part No.</td><td><code>{% if device.connector_part_number and device.connector_part_number != '_' %}{{ device.connector_part_number }}{% else %}—{% endif %}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="side-panel">
+    <!-- Photo -->
+    <div class="card" style="margin-bottom:12px;padding:16px;">
+      <div class="card-header" style="margin-bottom:12px;"><h2>Device Photo</h2></div>
+      {% if device.image %}
+        <img src="{{ device.image.url }}" alt="{{ device.description }}"
+             style="width:100%;border-radius:var(--radius);border:1px solid var(--pal-border);display:block;">
+      {% else %}
+        <div class="photo-placeholder">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".35">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span>No photo</span>
+        </div>
+        <a href="{% url 'admin:pfm1200_pfm1200device_change' device.pk %}" class="add-link">+ Upload photo</a>
+      {% endif %}
+    </div>
+
+    <!-- Datasheet -->
+    <div class="card" style="padding:16px;">
+      <div class="card-header" style="margin-bottom:12px;"><h2>Datasheet</h2></div>
+      {% if device.datasheet %}
+        <a href="{{ device.datasheet.url }}" target="_blank" rel="noopener" class="dl-btn dl-btn-navy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download PDF
+        </a>
+      {% endif %}
+      {% if device.datasheet_url %}
+        <a href="{{ device.datasheet_url }}" target="_blank" rel="noopener" class="dl-btn dl-btn-outline" style="margin-top:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          External Datasheet
+        </a>
+      {% endif %}
+      {% if not device.datasheet and not device.datasheet_url %}
+        <div style="text-align:center;color:var(--pal-gray-500);font-size:.78rem;padding:10px 0;">No datasheet attached</div>
+        <a href="{% url 'admin:pfm1200_pfm1200device_change' device.pk %}" class="add-link">+ Add datasheet</a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Cable sections ── -->
+{% for cable in device.cables.all %}
+<div class="card cable-card">
+  <div class="card-header">
+    <h2>Cable&nbsp;<code class="cable-code">{{ cable.cable_id }}</code>
+      {% if cable.cable_part_number and cable.cable_part_number != '_' %}
+        <span class="cable-pn">Part: {{ cable.cable_part_number }}</span>
+      {% endif %}
+    </h2>
+    {% if cable.connection_details %}
+      <span class="badge badge-ok">{{ cable.connection_details }}</span>
+    {% endif %}
+    {% if cable.length_mm %}
+      <span class="cable-len">{{ cable.length_mm }}&thinsp;mm</span>
+    {% else %}
+      <span class="cable-len tbd">Length TBD</span>
+    {% endif %}
+    <a href="{% url 'pfm1200:edit_cable_wiring' cable.pk %}" class="edit-wiring-btn" title="Edit wires for {{ cable.cable_id }}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Edit Wiring
+    </a>
+  </div>
+
+  {% if cable.junction_box_ref %}
+  <div class="info-box" style="margin-bottom:14px;">Junction Box / Connection: <strong>{{ cable.junction_box_ref }}</strong></div>
+  {% endif %}
+  {% if cable.notes %}
+  <div class="warn-box" style="font-size:.82rem;white-space:pre-wrap;margin-bottom:14px;">{{ cable.notes }}</div>
+  {% endif %}
+
+  {% if cable.wires.all %}
+
+  <!-- ── Visual: connector face + wiring scheme ── -->
+  <div class="wiring-visual">
+
+    <!-- Connector face -->
+    <div class="face-wrap">
+      <div class="diag-label">Connector Face View</div>
+      <div class="connector-face"
+           data-idx="{{ forloop.counter }}"
+           data-conn="{{ device.connector_type|escapejs }}"
+           data-wires='[{% for w in cable.wires.all %}{"pin":"{{ w.device_pin|escapejs }}","color":"{{ w.wire_color|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+      </div>
+      {% if device.connector_type and device.connector_type != '_' %}
+      <div class="conn-type-lbl">{{ device.connector_type }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Wiring scheme -->
+    <div class="scheme-wrap">
+      <div class="diag-label">Wiring Diagram</div>
+      <div class="wiring-scheme"
+           data-wires='[{% for w in cable.wires.all %}{"pin":"{{ w.device_pin|escapejs }}","color":"{{ w.wire_color|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── EPLAN Wiring Diagram ── -->
+  <div class="eplan-wrap">
+    <div style="display:flex;gap:18px;align-items:flex-start;">
+      <div style="flex:1;">
+        <div class="diag-label" style="margin-bottom:12px;">EPLAN Wiring Diagram</div>
+        <canvas class="eplan-canvas"
+          data-cable="{{ cable.cable_id|escapejs }}"
+          data-ref="{{ device.device_ref|escapejs }}"
+          data-desc="{{ device.description|escapejs }}"
+          data-cls="{{ device.classification|escapejs }}"
+          data-jb="{{ cable.junction_box_ref|escapejs }}"
+          data-len="{{ cable.length_mm }}"
+          data-part="{{ cable.cable_part_number|escapejs }}"
+          data-wires='[{% for w in cable.wires.all %}{"order":{{ w.order }},"color":"{{ w.wire_color|escapejs }}","pin":"{{ w.device_pin|escapejs }}","terminal":"{{ w.terminal_ref|escapejs }}","notes":"{{ w.notes|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'></canvas>
+        <div style="font-size:.72rem;color:var(--pal-gray-500);margin-top:8px;">Hover or click a wire to see details</div>
+      </div>
+      <div class="eplan-info" style="min-width:240px;flex-shrink:0;">
+        <div class="eplan-info-label">Wire Details</div>
+        <div class="eplan-info-content" style="display:none;">
+          <div class="eplan-info-row"><span style="font-weight:600;">Color:</span><code id="ei-color">—</code></div>
+          <div class="eplan-info-row"><span style="font-weight:600;">Pin (Device):</span><code id="ei-pin">—</code></div>
+          <div class="eplan-info-row"><span style="font-weight:600;">Terminal (JB):</span><code id="ei-term">—</code></div>
+          <div class="eplan-info-row"><span style="font-weight:600;">Notes:</span><div id="ei-notes" style="font-size:.82rem;color:var(--pal-gray-600);margin-top:6px;line-height:1.4;">—</div></div>
+        </div>
+        <div class="eplan-info-empty" style="color:var(--pal-gray-500);font-size:.85rem;padding:10px;text-align:center;background:var(--pal-gray-100);border-radius:var(--radius);">Hover or click a wire</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Wire detail table ── -->
+  <details class="wire-details">
+    <summary>Wire Detail Table ({{ cable.wires.all|length }} wires)</summary>
+    <table class="wire-tbl">
+      <thead>
+        <tr>
+          <th style="width:32px;">#</th>
+          <th style="width:120px;">Wire / Color</th>
+          <th style="width:160px;">Pin (Device Side)</th>
+          <th>Terminal / Connection (JB Side)</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for wire in cable.wires.all %}
+        <tr>
+          <td style="color:var(--pal-gray-300);font-size:.72rem;">{{ wire.order }}</td>
+          <td>
+            <span class="wire-swatch" data-color="{{ wire.wire_color }}"></span>
+            <code style="font-size:.8rem;">{{ wire.wire_color }}</code>
+          </td>
+          <td><span class="pin-badge">{{ wire.device_pin|default:"—" }}</span></td>
+          <td style="font-size:.83rem;">{{ wire.terminal_ref|default:"—" }}</td>
+          <td style="font-size:.78rem;color:var(--pal-gray-500);">{{ wire.notes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </details>
+
+  {% endif %}
+</div>
+{% endfor %}
+
+<style>
+.top-row { display:flex; gap:20px; align-items:flex-start; margin-bottom:20px; }
+.side-panel { display:flex; flex-direction:column; min-width:210px; max-width:260px; }
+
+.edit-btn {
+  margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); font-size:.78rem; font-weight:600; color:var(--pal-navy);
+  text-decoration:none; white-space:nowrap; transition:background .12s;
+}
+.edit-btn:hover { background:var(--pal-orange-light); color:var(--pal-orange); text-decoration:none; }
+
+.photo-placeholder {
+  width:100%; aspect-ratio:4/3; background:var(--pal-gray-100);
+  border:2px dashed var(--pal-border); border-radius:var(--radius);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; color:var(--pal-gray-500); font-size:.75rem; text-align:center; padding:20px;
+}
+.add-link { display:block; text-align:center; margin-top:8px; font-size:.74rem; color:var(--pal-orange); }
+
+.dl-btn {
+  display:flex; align-items:center; gap:8px; padding:10px 14px;
+  border-radius:var(--radius); text-decoration:none; font-size:.8rem;
+  font-weight:600; transition:background .12s;
+}
+.dl-btn-navy { background:var(--pal-navy); color:white; }
+.dl-btn-navy:hover { background:var(--pal-orange); color:white; text-decoration:none; }
+.dl-btn-outline { background:var(--pal-gray-100); border:1px solid var(--pal-border); color:var(--pal-navy); }
+.dl-btn-outline:hover { border-color:var(--pal-orange); color:var(--pal-orange); text-decoration:none; }
+
+.cable-card { margin-top:20px; }
+.edit-wiring-btn {
+  margin-left:auto; display:inline-flex; align-items:center; gap:5px;
+  padding:5px 11px; background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); font-size:.74rem; font-weight:600; color:var(--pal-navy);
+  text-decoration:none; white-space:nowrap; transition:background .12s;
+}
+.edit-wiring-btn:hover { background:var(--pal-orange-light); color:var(--pal-orange); text-decoration:none; }
+.cable-code {
+  font-family:monospace; background:var(--pal-gray-100);
+  padding:2px 8px; border-radius:2px; font-size:.88rem; border:1px solid var(--pal-border);
+}
+.cable-pn { color:var(--pal-gray-500); font-size:.78rem; font-weight:400; margin-left:10px; }
+.cable-len {
+  margin-left:auto; font-family:monospace; font-size:.76rem; font-weight:700;
+  background:var(--pal-gray-100); border:1px solid var(--pal-border);
+  border-radius:var(--radius); padding:3px 9px; color:var(--pal-navy);
+}
+.cable-len.tbd { color:var(--pal-gray-500); font-style:italic; font-weight:400; background:none; border:none; }
+
+/* EPLAN diagram */
+.eplan-wrap {
+  margin-top:18px; padding-top:14px; border-top:1px solid var(--pal-border);
+}
+.eplan-canvas {
+  display:block; border-radius:6px; border:1px solid #333;
+  max-width:100%; overflow:hidden; cursor:crosshair; background:#0A0C10;
+}
+.eplan-info {
+  background:var(--pal-surface); border:1px solid var(--pal-border); border-radius:var(--radius);
+  padding:12px; display:flex; flex-direction:column; gap:8px;
+}
+.eplan-info-label {
+  font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+  color:var(--pal-orange); margin-bottom:4px;
+}
+.eplan-info-row {
+  display:flex; flex-direction:column; gap:4px; padding:8px; background:var(--pal-gray-100);
+  border-radius:var(--radius); font-size:.82rem;
+}
+.eplan-info-row span { color:var(--pal-gray-600); }
+.eplan-info-row code { display:block; font-family:monospace; font-size:.9rem; color:var(--pal-navy);
+  font-weight:600; margin-top:2px;
+}
+
+.wiring-visual {
+  display:grid; grid-template-columns:200px 1fr; gap:24px;
+  align-items:start; margin-bottom:16px;
+}
+.face-wrap { display:flex; flex-direction:column; align-items:center; }
+.scheme-wrap { display:flex; flex-direction:column; }
+.diag-label {
+  font-size:.68rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.7px; color:var(--pal-gray-500); margin-bottom:8px;
+}
+.connector-face { min-width:200px; min-height:200px; }
+.conn-type-lbl { font-size:.72rem; color:var(--pal-gray-500); margin-top:4px; text-align:center; }
+
+.wire-details summary {
+  font-size:.78rem; font-weight:600; color:var(--pal-navy);
+  cursor:pointer; padding:8px 0; list-style:none; display:flex; align-items:center; gap:6px;
+  border-top:1px solid var(--pal-border); margin-top:4px;
+}
+.wire-details summary::-webkit-details-marker { display:none; }
+.wire-details summary::before { content:'▶'; font-size:.6rem; color:var(--pal-orange); transition:transform .15s; }
+.wire-details[open] summary::before { transform:rotate(90deg); }
+.wire-details[open] summary { color:var(--pal-orange); }
+
+.wire-tbl { width:100%; border-collapse:collapse; font-size:.83rem; margin-top:10px; }
+.wire-tbl thead th {
+  background:var(--pal-navy); color:white; padding:8px 12px;
+  font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.4px; text-align:left;
+}
+.wire-tbl thead th:first-child { border-radius:var(--radius) 0 0 0; }
+.wire-tbl thead th:last-child  { border-radius:0 var(--radius) 0 0; }
+.wire-tbl tbody td { padding:7px 12px; border-bottom:1px solid var(--pal-border); vertical-align:middle; }
+.wire-tbl tbody tr:hover td { background:var(--pal-orange-light); }
+
+.pin-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:26px; height:22px; padding:0 5px;
+  background:var(--pal-navy); color:white;
+  border-radius:var(--radius); font-family:monospace; font-size:.75rem; font-weight:700;
+}
+
+@media (max-width:680px) {
+  .top-row { flex-direction:column; }
+  .side-panel { min-width:unset; max-width:unset; width:100%; }
+  .wiring-visual { grid-template-columns:1fr; }
+  .face-wrap { flex-direction:row; gap:16px; align-items:flex-start; }
+}
+</style>
+
+<script>
+(function () {
+  var HEX = {
+    'BN':'#8D4E2A','BK':'#1E1E1E','BU':'#1A6FA8','WH':'#D8DCE0',
+    'GN':'#1E9455','YE':'#E8B800','RD':'#B03020','GY':'#6E7880',
+    'VT':'#7133A0','PK':'#C8186A','OG':'#D06418'
+  };
+
+  function lineColor(c) {
+    var k = c.toUpperCase().replace('/','');
+    if (k==='GNYE') return '#1E9455';
+    if (k==='BURD') return '#1A6FA8';
+    if (k==='GYPK') return '#6E7880';
+    return HEX[c.toUpperCase()] || HEX[k] || '#888';
+  }
+
+  /* Extract leading integer from device_pin string, e.g. "Pin 3" → 3 */
+  function pinNum(str) {
+    var m = (str || '').match(/\d+/);
+    return m ? parseInt(m[0], 10) : 9999;
+  }
+
+  /* Sort wire array by pin number ascending */
+  function byPin(arr) {
+    return arr.slice().sort(function(a, b) { return pinNum(a.pin) - pinNum(b.pin); });
+  }
+
+  /* ─────────────────────────────────────────────
+     CONNECTOR FACE  — pin# inside dot, colour outside
+  ───────────────────────────────────────────── */
+  function renderFace(el, wires, idx) {
+    var map = {}, maxP = 0;
+    wires.forEach(function(w) {
+      var p = parseInt(w.pin, 10);
+      if (!isNaN(p) && p > 0) { map[p] = w; if (p > maxP) maxP = p; }
+    });
+    var n = maxP || wires.length;
+    if (n < 1) return;
+
+    /* Layout scales with pin count */
+    var outerPad, dotFrac, lblR;
+    if      (n <= 2)  { outerPad = 48; dotFrac = 0.180; lblR = 0.88; }
+    else if (n <= 4)  { outerPad = 44; dotFrac = 0.148; lblR = 0.86; }
+    else if (n <= 8)  { outerPad = 38; dotFrac = 0.103; lblR = 0.84; }
+    else if (n <= 16) { outerPad = 32; dotFrac = 0.076; lblR = 0.83; }
+    else              { outerPad = 26; dotFrac = 0.058; lblR = 0.84; }
+
+    var S = 200, total = S + outerPad * 2;
+    var cx = total / 2, cy = total / 2;
+    var bodyR   = S * 0.39;
+    var innerR  = S * 0.31;
+    var pinRing = S * 0.195;
+    var dot     = S * dotFrac;
+    var labelR  = bodyR + outerPad * lblR;
+    var lblSz   = n <= 8 ? 10 : 8.5;
+
+    var g = 'g' + idx;
+    var svg = '<svg width="'+total+'" height="'+total+'"'
+      +' viewBox="0 0 '+total+' '+total+'"'
+      +' xmlns="http://www.w3.org/2000/svg">';
+
+    svg += '<defs>'
+      +'<radialGradient id="bg'+g+'"><stop offset="0%" stop-color="#4E535E"/>'
+      +'<stop offset="100%" stop-color="#1F2228"/></radialGradient>'
+      +'<linearGradient id="gnye'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#1E9455"/>'
+      +'<stop offset="50%" stop-color="#E8B800"/></linearGradient>'
+      +'<linearGradient id="burd'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#1A6FA8"/>'
+      +'<stop offset="50%" stop-color="#B03020"/></linearGradient>'
+      +'<linearGradient id="gypk'+g+'" x1="0" x2="1"><stop offset="50%" stop-color="#6E7880"/>'
+      +'<stop offset="50%" stop-color="#C8186A"/></linearGradient>'
+      +'</defs>';
+
+    /* Connector shell */
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+bodyR+'" fill="#8E969E" stroke="#606870" stroke-width="2.5"/>';
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+innerR+'" fill="url(#bg'+g+')"/>';
+    svg += '<rect x="'+(cx-6)+'" y="'+(cy+bodyR-4)+'" width="12" height="10" rx="2" fill="#8E969E"/>';
+
+    for (var i = 1; i <= n; i++) {
+      var deg = -90 + (i - 1) * 360 / n;
+      var rad = deg * Math.PI / 180;
+      var px  = cx + Math.cos(rad) * pinRing;
+      var py  = cy + Math.sin(rad) * pinRing;
+      var lx  = cx + Math.cos(rad) * labelR;
+      var ly  = cy + Math.sin(rad) * labelR;
+      var w   = map[i];
+
+      /* Pin hole */
+      svg += '<circle cx="'+px+'" cy="'+py+'" r="'+dot+'"'
+        +' fill="#0A0C0F" stroke="#505660" stroke-width="1.5"/>';
+
+      if (w) {
+        var c = w.color.toUpperCase().replace('/','');
+        var f = (c==='GNYE') ? 'url(#gnye'+g+')'
+              : (c==='BURD') ? 'url(#burd'+g+')'
+              : (c==='GYPK') ? 'url(#gypk'+g+')'
+              : (HEX[w.color.toUpperCase()] || HEX[c] || '#555');
+
+        /* Large coloured contact */
+        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(dot*0.85)+'"'
+          +' fill="'+f+'" stroke="rgba(255,255,255,.28)" stroke-width="1"/>';
+
+        /* Pin number INSIDE the dot */
+        var dark = (c==='WH'||c==='YE'||c==='GNYE');
+        svg += '<text x="'+px+'" y="'+py+'"'
+          +' text-anchor="middle" dominant-baseline="middle"'
+          +' font-family="\'Segoe UI\',Arial,sans-serif"'
+          +' font-size="'+(Math.max(dot*0.72,7))+'" font-weight="900"'
+          +' fill="'+(dark?'#0F1F30':'#fff')+'">'+i+'</text>';
+
+        /* Colour abbreviation OUTSIDE the shell */
+        var lblFill = HEX[w.color.toUpperCase()] || HEX[c] || '#8AACCC';
+        if (c==='BK') lblFill='#B0B8C4'; else if (c==='BN') lblFill='#C09060';
+        svg += '<text x="'+lx+'" y="'+ly+'"'
+          +' text-anchor="middle" dominant-baseline="middle"'
+          +' font-family="\'Segoe UI\',Arial,sans-serif"'
+          +' font-size="'+lblSz+'" font-weight="700" fill="'+lblFill+'">'+w.color+'</text>';
+
+      } else {
+        svg += '<circle cx="'+px+'" cy="'+py+'" r="'+(dot*0.52)+'" fill="#262C36"/>';
+        svg += '<text x="'+lx+'" y="'+ly+'"'
+          +' text-anchor="middle" dominant-baseline="middle"'
+          +' font-family="\'Segoe UI\',Arial,sans-serif"'
+          +' font-size="'+lblSz+'" font-weight="700" fill="#505660">'+i+'</text>';
+      }
+    }
+
+    if (n >= 5) {
+      svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(dot*0.50)+'"'
+        +' fill="#181A1F" stroke="#383C44" stroke-width="1"/>';
+    }
+
+    svg += '</svg>';
+    el.innerHTML = svg;
+    el.style.width  = total+'px';
+    el.style.height = total+'px';
+  }
+
+  /* ─────────────────────────────────────────────
+     WIRING SCHEME — sorted by pin number
+  ───────────────────────────────────────────── */
+  function renderScheme(el, wires) {
+    if (!wires.length) return;
+    var sorted = byPin(wires);
+
+    var ROW = 40, PAD = 10;
+    var VW  = 480, H = PAD * 2 + sorted.length * ROW;
+    var PIN_CX = 22, PIN_R = 15;
+    var L1 = 44, L2 = 355;
+    var LBL_X = L1 + 10, LBL_W = 44;
+    var TERM_X = L2 + 10;
+
+    var svg = '<svg width="100%" height="'+H+'" viewBox="0 0 '+VW+' '+H+'"'
+      +' preserveAspectRatio="xMinYMid meet"'
+      +' xmlns="http://www.w3.org/2000/svg"'
+      +' style="font-family:\'Segoe UI\',Arial,sans-serif;">';
+
+    svg += '<line x1="0" y1="0" x2="'+VW+'" y2="0" stroke="#D0D8E0" stroke-width="1"/>';
+    svg += '<line x1="0" y1="'+H+'" x2="'+VW+'" y2="'+H+'" stroke="#D0D8E0" stroke-width="1"/>';
+
+    sorted.forEach(function(w, i) {
+      var y  = PAD + i * ROW + ROW / 2;
+      var lc = lineColor(w.color);
+
+      if (i % 2 === 0) {
+        svg += '<rect x="0" y="'+(PAD+i*ROW)+'" width="'+VW+'" height="'+ROW+'" fill="#F4F7FA"/>';
+      }
+
+      /* Pin circle */
+      svg += '<circle cx="'+PIN_CX+'" cy="'+y+'" r="'+PIN_R+'" fill="#1C3A5C"/>';
+      svg += '<text x="'+PIN_CX+'" y="'+y+'"'
+        +' text-anchor="middle" dominant-baseline="middle"'
+        +' font-size="10" font-weight="800" fill="white">'+(w.pin||'?')+'</text>';
+
+      /* Coloured wire line */
+      svg += '<line x1="'+(PIN_CX+PIN_R)+'" y1="'+y+'" x2="'+L2+'" y2="'+y+'"'
+        +' stroke="'+lc+'" stroke-width="5" stroke-linecap="round"/>';
+
+      /* Colour label pill */
+      svg += '<rect x="'+LBL_X+'" y="'+(y-11)+'" width="'+LBL_W+'" height="22" rx="4"'
+        +' fill="white" stroke="#C8CDD2" stroke-width="1"/>';
+      svg += '<text x="'+(LBL_X+LBL_W/2)+'" y="'+y+'"'
+        +' text-anchor="middle" dominant-baseline="middle"'
+        +' font-size="9" font-weight="900" fill="#222">'+w.color+'</text>';
+
+      /* Terminal reference */
+      svg += '<text x="'+TERM_X+'" y="'+y+'"'
+        +' dominant-baseline="middle" font-size="9.5" font-weight="600"'
+        +' fill="#1C3A5C" font-family="\'Courier New\',monospace">'+(w.terminal||'—')+'</text>';
+
+      if (i < sorted.length - 1) {
+        svg += '<line x1="0" y1="'+(PAD+(i+1)*ROW)+'" x2="'+VW+'" y2="'+(PAD+(i+1)*ROW)+'"'
+          +' stroke="#DDE1E7" stroke-width="0.7"/>';
+      }
+    });
+
+    svg += '</svg>';
+    el.innerHTML = svg;
+  }
+
+  /* ─────────────────────────────────────────────
+     EPLAN-STYLE WIRING DIAGRAM  (per-cable canvas, interactive)
+  ───────────────────────────────────────────── */
+  function renderEplan(canvas, cfg) {
+    var wires  = (cfg.wires || []).slice().sort(function(a,b){ return pinNum(a.pin)-pinNum(b.pin); });
+    var nW     = wires.length || 1;
+    var DPR    = window.devicePixelRatio || 1;
+
+    /* Layout — increased sizes for better visibility and print */
+    var WP     = 52;      /* wire pitch px (increased for spacing) */
+    var PAD    = 40;      /* horizontal padding */
+    var TOP_H  = 180;     /* terminal label zone */
+    var BUS_H  = 18;      /* bus bar */
+    var RUN_H  = 260;     /* wire run */
+    var BOX_H  = 80;      /* device box */
+    var LBL_H  = 130;     /* label zone */
+    var H      = TOP_H + BUS_H + RUN_H + BOX_H + LBL_H;
+    var W      = Math.max(nW * WP + PAD * 2, 260);
+
+    canvas.width        = W * DPR;
+    canvas.height       = H * DPR;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    /* Colour palette */
+    var C = {
+      bg:        '#0A0C10',
+      bus:       '#1A70EE',
+      busEdge:   '#4598FF',
+      cable:     '#FFFF44',
+      devBox:    '#FFFF44',
+      devRef:    '#00FF44',
+      term:      '#FFFF88',
+      blind:     '#555555',
+      blindTx:   '#777788',
+      pin:       '#FFFF44',
+      pinTx:     '#000000',
+      wireHi:    '#FF44FF',
+      wireHiLine:'#FF88FF',
+      length:    '#88BBDD',
+      jb:        '#6688CC',
+    };
+    var MONO = "'Courier New',monospace";
+    var SANS = "'Segoe UI',Arial,sans-serif";
+
+    /* Positions */
+    var busY    = TOP_H;
+    var wireY0  = busY + BUS_H + 10;
+    var wireY1  = busY + BUS_H + RUN_H;
+    var boxY    = wireY1;
+    var lblY    = boxY + BOX_H;
+    var cx      = W / 2;
+    function wx(i){ return PAD + i * WP + WP / 2; }
+
+    /* Wire hit detection array */
+    var wireHits = [];
+
+    /* Main draw function */
+    function draw(hoveredIdx) {
+
+    /* ── Background ── */
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    /* ── Terminal labels above bus (rotated) ── */
+    wires.forEach(function(w, i) {
+      var x       = wx(i);
+      var isBlind = (!w.terminal || w.terminal === 'Blind' || w.terminal === '—'
+                     || w.color === '—' || w.color === '');
+      var col     = isBlind ? C.blind : (HEX[w.color.toUpperCase()] || HEX[(w.color.toUpperCase().replace('/',''))] || '#888888');
+
+      if (isBlind) col = C.blind;
+
+      /* Vertical stub above bus */
+      ctx.strokeStyle = isBlind ? C.blind : col;
+      ctx.lineWidth   = isBlind ? 1 : 2;
+      if (isBlind) ctx.setLineDash([3,3]);
+      ctx.beginPath();
+      ctx.moveTo(x, busY);
+      ctx.lineTo(x, busY - 22);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      /* Rotated terminal text */
+      ctx.save();
+      ctx.translate(x, busY - 26);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = isBlind ? C.blindTx : C.term;
+      ctx.font      = (isBlind ? '' : 'bold ') + '9px ' + MONO;
+      ctx.textAlign = 'left';
+      var lbl = isBlind ? 'Blind' : (w.terminal || '—');
+      ctx.fillText(lbl, 0, 3);
+      ctx.restore();
+    });
+
+    /* ── Bus bar ── */
+    ctx.fillStyle   = C.bus;
+    ctx.fillRect(0, busY, W, BUS_H);
+    ctx.strokeStyle = C.busEdge;
+    ctx.lineWidth   = 1;
+    ctx.strokeRect(0, busY, W, BUS_H);
+
+    /* Junction box label on bus */
+    ctx.fillStyle   = '#FFFFFF';
+    ctx.font        = 'bold 8px ' + MONO;
+    ctx.textAlign   = 'center';
+    ctx.fillText((cfg.jb || '').replace('Junction Box ','').replace('Molex Blue','C70').replace('Molex Grey','C71'), cx, busY + 10);
+
+    /* ── Cable ID band ── */
+    var bandY = wireY0 + 2;
+    ctx.fillStyle   = 'rgba(50,50,0,.9)';
+    ctx.fillRect(2, bandY, W-4, 18);
+    ctx.strokeStyle = C.cable;
+    ctx.lineWidth   = 0.8;
+    ctx.strokeRect(2, bandY, W-4, 18);
+    ctx.fillStyle   = C.cable;
+    ctx.font        = 'bold 10px ' + MONO;
+    ctx.textAlign   = 'center';
+    ctx.fillText('−' + cfg.cable_id, cx, bandY + 12);
+
+    /* ── Vertical wires ── */
+    wires.forEach(function(w, i) {
+      var x       = wx(i);
+      var isBlind = (!w.color || w.color === '—' || w.terminal === 'Blind' || w.pin === 'Blind');
+      var col     = isBlind ? C.blind
+                            : (HEX[w.color.toUpperCase()] || HEX[(w.color.toUpperCase().replace('/',''))] || '#888888');
+
+      ctx.strokeStyle = col;
+      ctx.lineWidth   = isBlind ? 1.2 : 3;
+      if (isBlind) ctx.setLineDash([5,4]);
+      ctx.beginPath();
+      ctx.moveTo(x, wireY0 + 22);
+      ctx.lineTo(x, wireY1);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      /* Wire colour label along wire */
+      if (!isBlind && w.color && w.color !== '—') {
+        var midY = wireY0 + 26 + (wireY1 - wireY0 - 30) * 0.42;
+        ctx.save();
+        ctx.translate(x + 5, midY);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = col;
+        ctx.font      = 'bold 8px ' + MONO;
+        ctx.textAlign = 'center';
+        ctx.fillText(w.color, 0, 0);
+        ctx.restore();
+      }
+    });
+
+    /* ── Device box ── */
+    ctx.strokeStyle = C.devBox;
+    ctx.lineWidth   = 1.8;
+    ctx.strokeRect(4, boxY, W-8, BOX_H);
+
+    /* Symbol inside box */
+    var cls = (cfg.cls || '').toLowerCase();
+    var symX = cx, symY = boxY + BOX_H/2, sw = W-20, sh = BOX_H-10;
+    ctx.save();
+    ctx.strokeStyle = C.devBox; ctx.lineWidth = 1.6;
+
+    if (cls.indexOf('acoustic') !== -1) {
+      /* Speaker */
+      ctx.beginPath();
+      ctx.moveTo(symX-sw*0.22,symY-sh*0.28); ctx.lineTo(symX-sw*0.22,symY+sh*0.28);
+      ctx.lineTo(symX+sw*0.28,symY+sh*0.38); ctx.lineTo(symX+sw*0.28,symY-sh*0.38);
+      ctx.closePath(); ctx.stroke();
+      for (var ai=1; ai<=2; ai++) {
+        ctx.beginPath(); ctx.arc(symX+sw*0.34,symY,sh*(0.18*ai),-0.6,0.6); ctx.stroke();
+      }
+    } else if (cls.indexOf('lighting') !== -1) {
+      /* Sun */
+      var r2=Math.min(sw,sh)*0.22;
+      ctx.beginPath(); ctx.arc(symX,symY,r2,0,Math.PI*2); ctx.stroke();
+      for (var ri=0;ri<8;ri++){
+        var ra=ri*Math.PI/4;
+        ctx.beginPath(); ctx.moveTo(symX+Math.cos(ra)*(r2+3),symY+Math.sin(ra)*(r2+3));
+        ctx.lineTo(symX+Math.cos(ra)*(r2+9),symY+Math.sin(ra)*(r2+9)); ctx.stroke();
+      }
+    } else if (cls.indexOf('safety') !== -1 || cls.indexOf('stop') !== -1) {
+      /* Butterfly valve */
+      ctx.beginPath(); ctx.moveTo(symX-sw*0.25,symY-sh*0.30); ctx.lineTo(symX+sw*0.25,symY+sh*0.30);
+      ctx.lineTo(symX+sw*0.25,symY-sh*0.30); ctx.lineTo(symX-sw*0.25,symY+sh*0.30);
+      ctx.closePath(); ctx.stroke();
+    } else if (cls.indexOf('electromech') !== -1) {
+      /* Solenoid coil */
+      var cw=sw*0.5, ch=sh*0.28;
+      ctx.strokeRect(symX-cw/2, symY-ch/2, cw, ch);
+      for (var ci=0;ci<4;ci++){
+        ctx.beginPath(); ctx.arc(symX-cw/2+cw/4*(ci+0.5),symY,ch/2,Math.PI,0); ctx.stroke();
+      }
+    } else if (cls.indexOf('analogue') !== -1 || cls.indexOf('sensor') !== -1) {
+      /* Circle + arrow */
+      var sr=Math.min(sw,sh)*0.26;
+      ctx.beginPath(); ctx.arc(symX,symY,sr,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(symX-sr*0.55,symY+sr*0.3); ctx.lineTo(symX+sr*0.55,symY-sr*0.3);
+      ctx.moveTo(symX+sr*0.55,symY-sr*0.3); ctx.lineTo(symX+sr*0.35,symY-sr*0.3);
+      ctx.stroke();
+    } else {
+      /* Generic: rect with diagonal */
+      var bx2=symX-sw*0.30,by2=symY-sh*0.30;
+      ctx.strokeRect(bx2,by2,sw*0.60,sh*0.60);
+      ctx.beginPath(); ctx.moveTo(bx2,by2+sh*0.60); ctx.lineTo(bx2+sw*0.60,by2); ctx.stroke();
+    }
+    ctx.restore();
+
+    /* ── Pin dots at device box top edge ── */
+    var PIN_R = Math.min(10, WP * 0.38);
+    wires.forEach(function(w, i) {
+      var x       = wx(i);
+      var isBlind = (!w.color || w.color === '—' || w.pin === 'Blind');
+
+      ctx.fillStyle   = isBlind ? C.blind : C.pin;
+      ctx.strokeStyle = C.bg;
+      ctx.lineWidth   = 1.5;
+      ctx.beginPath(); ctx.arc(x, boxY, PIN_R, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+
+      /* Pin number */
+      var pn  = (w.pin||'').replace(/[^\d]/g,'').slice(-2) || (isBlind ? '' : String(i+1));
+      if (pn) {
+        ctx.fillStyle = isBlind ? C.blindTx : C.pinTx;
+        ctx.font      = 'bold ' + (pn.length > 2 ? '6' : '8') + 'px ' + MONO;
+        ctx.textAlign = 'center';
+        ctx.fillText(pn, x, boxY + 3);
+      }
+    });
+
+    /* ── Cable lines to device box ── */
+    wires.forEach(function(w, i) {
+      var x = wx(i);
+      ctx.strokeStyle = (hoveredIdx === i) ? C.wireHiLine : C.cable;
+      ctx.lineWidth   = (hoveredIdx === i) ? 2.4 : 1.8;
+      if (hoveredIdx === i) ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(x, wireY0);
+      ctx.lineTo(x, boxY);
+      ctx.stroke();
+      if (hoveredIdx === i) ctx.setLineDash([]);
+    });
+
+    /* ── Hit detection: register wire hitboxes ── */
+    wireHits = [];
+    wires.forEach(function(w, i) {
+      var x = wx(i);
+      wireHits.push({ idx: i, x: x, minX: x - WP/3, maxX: x + WP/3, minY: wireY0 - 20, maxY: boxY + 20 });
+    });
+
+    /* ── Labels below box ── */
+    var ly = lblY + 13;
+    ctx.textAlign = 'center';
+
+    ctx.fillStyle = '#FFFFAA';
+    ctx.font      = 'bold 8px ' + MONO;
+    ctx.fillText('+SS', cx, ly); ly += 12;
+
+    ctx.fillStyle = C.cable;
+    ctx.font      = 'bold 11px ' + MONO;
+    ctx.fillText('−' + (cfg.ref || cfg.cable_id), cx, ly); ly += 13;
+
+    /* Wrap description */
+    var words = (cfg.desc || '').split(' ');
+    var line = '', maxW = W - 8;
+    ctx.fillStyle = C.devDesc;
+    ctx.font      = '8.5px ' + SANS;
+    words.forEach(function(word){
+      var test = line ? line+' '+word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, cx, ly); ly += 11; line = word;
+      } else { line = test; }
+    });
+    if (line) { ctx.fillText(line, cx, ly); ly += 11; }
+
+    if (cfg.len && +cfg.len > 0) {
+      ctx.fillStyle = C.length;
+      ctx.font      = '8px ' + MONO;
+      ctx.fillText(cfg.len + ' mm', cx, ly); ly += 10;
+    }
+    if (cfg.part) {
+      ctx.fillStyle = '#668899';
+      ctx.font      = '7.5px ' + MONO;
+      ctx.fillText(cfg.part, cx, ly);
+    }
+    } /* end draw function */
+
+    /* Initial draw */
+    draw(-1);
+
+    /* Mouse event handlers */
+    canvas.addEventListener('mousemove', function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      var hoveredIdx = -1;
+
+      for (var i = 0; i < wireHits.length; i++) {
+        var hit = wireHits[i];
+        if (x >= hit.minX && x <= hit.maxX && y >= hit.minY && y <= hit.maxY) {
+          hoveredIdx = i;
+          break;
+        }
+      }
+
+      if (hoveredIdx !== -1) {
+        canvas.style.cursor = 'pointer';
+        draw(hoveredIdx);
+        updateInfoPanel(wires[hoveredIdx]);
+      } else {
+        canvas.style.cursor = 'default';
+        draw(-1);
+        hideInfoPanel();
+      }
+    });
+
+    canvas.addEventListener('mouseleave', function() {
+      draw(-1);
+      hideInfoPanel();
+      canvas.style.cursor = 'default';
+    });
+
+    /* Info panel functions */
+    function updateInfoPanel(wire) {
+      var infoContent = document.querySelector('.eplan-info-content');
+      var infoEmpty   = document.querySelector('.eplan-info-empty');
+      if (!infoContent || !infoEmpty) return;
+
+      infoContent.style.display = 'block';
+      infoEmpty.style.display   = 'none';
+
+      var color = wire.color || '—';
+      var pin   = wire.pin || '—';
+      var term  = wire.terminal || '—';
+      var notes = wire.notes || '';
+
+      document.getElementById('ei-color').textContent = color;
+      document.getElementById('ei-pin').textContent   = pin;
+      document.getElementById('ei-term').textContent  = term;
+      document.getElementById('ei-notes').textContent = notes || '(no notes)';
+    }
+
+    function hideInfoPanel() {
+      var infoContent = document.querySelector('.eplan-info-content');
+      var infoEmpty   = document.querySelector('.eplan-info-empty');
+      if (infoContent) infoContent.style.display = 'none';
+      if (infoEmpty)   infoEmpty.style.display   = 'block';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.connector-face').forEach(function (el) {
+      try {
+        var w = JSON.parse(el.dataset.wires || '[]');
+        if (w.length) renderFace(el, w, el.dataset.idx || '0');
+      } catch(e) { console.warn('face', e); }
+    });
+    document.querySelectorAll('.wiring-scheme').forEach(function (el) {
+      try {
+        var w = JSON.parse(el.dataset.wires || '[]');
+        if (w.length) renderScheme(el, w);
+      } catch(e) { console.warn('scheme', e); }
+    });
+    document.querySelectorAll('.eplan-canvas').forEach(function (canvas) {
+      try {
+        var cfg = {
+          cable_id: canvas.dataset.cable,
+          ref:      canvas.dataset.ref,
+          desc:     canvas.dataset.desc,
+          cls:      canvas.dataset.cls,
+          jb:       canvas.dataset.jb,
+          len:      canvas.dataset.len,
+          part:     canvas.dataset.part,
+          wires:    JSON.parse(canvas.dataset.wires || '[]'),
+        };
+        if (cfg.wires.length) renderEplan(canvas, cfg);
+      } catch(e) { console.warn('eplan', e); }
+    });
+  });
+})();
+</script>
+
+{% endblock %}
